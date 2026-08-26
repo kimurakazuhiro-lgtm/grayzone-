@@ -2,9 +2,34 @@
 
 import { useState } from "react";
 
+const questions = [
+  {
+    category: "利用者に対する言動について",
+    text: "利用者さんにため口で話してしまうことがある。",
+  },
+  {
+    category: "利用者に対する言動について",
+    text: "利用者さんにメリットを伝えずに、デメリットのみ伝える。",
+  },
+];
+
 export default function Home() {
   const [started, setStarted] = useState(false);
-  const [answer, setAnswer] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [episodes, setEpisodes] = useState<Record<number, string>>({});
+  const [finished, setFinished] = useState(false);
+
+  const question = questions[currentQuestion];
+  const selectedAnswer = answers[currentQuestion] ?? "";
+
+  const goNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      setFinished(true);
+    }
+  };
 
   if (!started) {
     return (
@@ -42,17 +67,36 @@ export default function Home() {
     );
   }
 
+  if (finished) {
+    return (
+      <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
+        <section className="mx-auto max-w-xl rounded-3xl bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-semibold text-emerald-700">
+            グレーゾーンアンケート
+          </p>
+          <h1 className="mt-4 text-3xl font-bold">回答を受け取りました</h1>
+          <p className="mt-5 leading-7 text-slate-600">
+            ご回答ありがとうございます。
+            これは動作確認用の完了画面です。
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
       <section className="mx-auto max-w-xl rounded-3xl bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold text-emerald-700">1 / 45</p>
+        <p className="text-sm font-semibold text-emerald-700">
+          {currentQuestion + 1} / 45
+        </p>
 
         <p className="mt-6 text-sm font-semibold text-slate-500">
-          利用者に対する言動について
+          {question.category}
         </p>
 
         <h1 className="mt-2 text-2xl font-bold leading-tight">
-          利用者さんにため口で話してしまうことがある。
+          {question.text}
         </h1>
 
         <p className="mt-5 leading-7 text-slate-600">
@@ -64,9 +108,14 @@ export default function Home() {
             <button
               key={item}
               type="button"
-              onClick={() => setAnswer(item)}
+              onClick={() =>
+                setAnswers((previous) => ({
+                  ...previous,
+                  [currentQuestion]: item,
+                }))
+              }
               className={`rounded-xl border px-5 py-4 text-left font-bold ${
-                answer === item
+                selectedAnswer === item
                   ? "border-emerald-700 bg-emerald-700 text-white"
                   : "border-slate-200 bg-white text-slate-700"
               }`}
@@ -79,19 +128,40 @@ export default function Home() {
         <label className="mt-7 block text-sm font-semibold text-slate-700">
           関連するエピソード（任意）
           <textarea
+            value={episodes[currentQuestion] ?? ""}
+            onChange={(event) =>
+              setEpisodes((previous) => ({
+                ...previous,
+                [currentQuestion]: event.target.value,
+              }))
+            }
             className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
             rows={4}
             placeholder="思い出した場面があれば入力してください"
           />
         </label>
 
-        <button
-          type="button"
-          disabled={!answer}
-          className="mt-7 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white disabled:bg-slate-300"
-        >
-          次の設問へ
-        </button>
+        <div className="mt-7 flex gap-3">
+          <button
+            type="button"
+            onClick={() => setCurrentQuestion(currentQuestion - 1)}
+            disabled={currentQuestion === 0}
+            className="rounded-xl border border-slate-300 px-5 py-4 font-bold disabled:border-slate-100 disabled:text-slate-300"
+          >
+            戻る
+          </button>
+
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!selectedAnswer}
+            className="flex-1 rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white disabled:bg-slate-300"
+          >
+            {currentQuestion === questions.length - 1
+              ? "回答を確認する"
+              : "次の設問へ"}
+          </button>
+        </div>
       </section>
     </main>
   );
