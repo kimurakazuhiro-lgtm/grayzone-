@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const questions = [
   {
@@ -195,13 +196,23 @@ export default function Home() {
   const question = questions[currentQuestion];
   const selectedAnswer = answers[currentQuestion] ?? "";
 
-  const goNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      setFinished(true);
-    }
-  };
+ const goNext = async () => {
+  if (currentQuestion < questions.length - 1) {
+    setCurrentQuestion(currentQuestion + 1);
+    return;
+  }
+
+  const { error } = await supabase.from("responses").insert({
+    answers: { answers, episodes },
+  });
+
+  if (error) {
+    alert("回答を保存できませんでした。もう一度お試しください。");
+    return;
+  }
+
+  setFinished(true);
+};
 
   if (!started) {
     return (
