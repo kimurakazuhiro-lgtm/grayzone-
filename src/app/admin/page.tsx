@@ -18,6 +18,7 @@ export default function AdminPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [accessCode, setAccessCode] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [questionCount, setQuestionCount] = useState(10);
@@ -56,6 +57,16 @@ export default function AdminPage() {
     };
 
     void loadSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setSession(nextSession);
+        setIsPasswordRecovery(true);
+        setIsLoading(false);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const signIn = async () => {
@@ -92,11 +103,29 @@ export default function AdminPage() {
     await supabase.auth.signOut();
     setSession(null);
     setPassword("");
+    setIsPasswordRecovery(false);
     setMessage("");
   };
 
+  const requestPasswordReset = async () => {
+    if (!email.trim()) {
+      setMessage("管理者メールアドレスを入力してください。");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/admin`,
+    });
+
+    setMessage(
+      error
+        ? "再設定メールを送信できませんでした。時間をおいてもう一度お試しください。"
+        : "再設定用メールを送信しました。メール内のリンクを開いて、新しいパスワードを設定してください。",
+    );
+  };
+
   const changePassword = async () => {
-    if (!currentPassword) {
+    if (!isPasswordRecovery && !currentPassword) {
       setPasswordMessage("現在のパスワードを入力してください。");
       return;
     }
@@ -107,10 +136,11 @@ export default function AdminPage() {
     }
 
     setPasswordMessage("");
-    const { error } = await supabase.auth.updateUser({
-      current_password: currentPassword,
-      password: newPassword,
-    });
+    const { error } = await supabase.auth.updateUser(
+      isPasswordRecovery
+        ? { password: newPassword }
+        : { current_password: currentPassword, password: newPassword },
+    );
 
     if (error) {
       setPasswordMessage(`パスワードを変更できませんでした：${error.message}`);
@@ -119,6 +149,7 @@ export default function AdminPage() {
 
     setCurrentPassword("");
     setNewPassword("");
+    setIsPasswordRecovery(false);
     setPasswordMessage("パスワードを変更しました。次回から新しいパスワードでログインしてください。");
   };
 
@@ -158,10 +189,43 @@ export default function AdminPage() {
             >
               管理者としてログイン
             </button>
+            <button
+              type="button"
+              onClick={requestPasswordReset}
+              className="font-bold text-emerald-700 underline"
+            >
+              パスワードを忘れた場合
+            </button>
           </div>
         )}
 
-        {session && !isLoading && !message.includes("権限がありません") && (
+        {session && isPasswordRecovery && !isLoading && (
+          <div className="mt-8 grid gap-5">
+            <p className="font-semibold text-slate-700">新しい管理者パスワードを設定してください。</p>
+            <label className="text-sm font-semibold text-slate-700">
+              新しいパスワード（6文字以上）
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={changePassword}
+              disabled={newPassword.length < 6}
+              className="rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white disabled:bg-slate-300"
+            >
+              新しいパスワードを保存する
+            </button>
+            {passwordMessage && <p className="text-sm font-semibold text-slate-700">{passwordMessage}</p>}
+          </div>
+        )}
+
+        {session && !isPasswordRecovery && !isLoading && !message.includes("権限がありません") && (
           <div className="mt-8 grid gap-6">
             <label className="text-sm font-semibold text-slate-700">
               参加者へ伝える閲覧コード
