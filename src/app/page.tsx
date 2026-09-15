@@ -254,6 +254,7 @@ export default function Home() {
   const [finished, setFinished] = useState(false);
   const [isReviewingSubmittedAnswers, setIsReviewingSubmittedAnswers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
 
   const question = surveyQuestions[currentQuestion];
   const selectedAnswer = answers[currentQuestion] ?? "";
@@ -295,6 +296,7 @@ export default function Home() {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
+    setSubmitMessage("回答を送信しています。画面はそのままでお待ちください。");
 
     try {
       const response = await Promise.race([
@@ -314,12 +316,14 @@ export default function Home() {
       ]);
 
       if (response === null) {
-        alert("保存に時間がかかっています。通信を確認して、もう一度お試しください。");
+        setSubmitMessage(
+          "保存に時間がかかっています。通信を確認して、もう一度「回答を送信する」を押してください。",
+        );
         return;
       }
 
       if (response.error) {
-        alert("回答を保存できませんでした。もう一度お試しください。");
+        setSubmitMessage("回答を保存できませんでした。通信を確認して、もう一度お試しください。");
         return;
       }
 
@@ -806,6 +810,11 @@ export default function Home() {
               {isSubmitting ? "送信中です..." : "回答を送信する"}
             </button>
           </div>
+          {submitMessage && (
+            <p className="mt-4 text-sm leading-6 text-slate-600" role="status">
+              {submitMessage}
+            </p>
+          )}
         </section>
       </main>
     );
