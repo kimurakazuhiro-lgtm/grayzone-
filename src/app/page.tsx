@@ -734,6 +734,9 @@ export default function Home() {
               const isSelectedForExercise = exerciseTopics.some(
                 (item) => item.question_text === row.question_text,
               );
+              const questionOptionalTexts = optionalTexts.filter(
+                (optionalText) => optionalText.question_text === row.question_text,
+              );
               const enteredPercentage =
                 responseCount === 0 ? 0 : Math.round((enteredCount / responseCount) * 100);
 
@@ -780,6 +783,26 @@ export default function Home() {
                       </div>
                     )}
                   </div>
+                  {questionOptionalTexts.length > 0 && (
+                    <div className="mt-5 border-t border-slate-100 pt-4">
+                      <p className="text-sm font-semibold text-slate-700">任意入力</p>
+                      <div className="mt-3 grid gap-3">
+                        {questionOptionalTexts.map((optionalText, index) => (
+                          <div
+                            key={`${optionalText.input_type}-${index}`}
+                            className="rounded-xl bg-emerald-50 p-4"
+                          >
+                            <p className="text-sm font-semibold text-emerald-700">
+                              {optionalText.input_type}
+                            </p>
+                            <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-700">
+                              {optionalText.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => toggleExerciseTopic(row)}
@@ -801,15 +824,19 @@ export default function Home() {
             })}
           </div>
 
-          {!isLoadingResults && !resultsError && optionalTexts.length > 0 && (
+          {!isLoadingResults &&
+            !resultsError &&
+            optionalTexts.some((optionalText) => !optionalText.question_text) && (
             <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-              <p className="text-sm font-semibold text-emerald-700">任意入力の内容</p>
-              <h2 className="mt-2 text-xl font-bold">参加者が入力した補足・気になった対応</h2>
+              <p className="text-sm font-semibold text-emerald-700">最後の任意入力</p>
+              <h2 className="mt-2 text-xl font-bold">参加者が最後に入力した気になった対応</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 個人や利用者を特定できる情報が含まれていないか確認し、取扱いにご注意ください。
               </p>
               <div className="mt-4 grid gap-3">
-                {optionalTexts.map((optionalText, index) => (
+                {optionalTexts
+                  .filter((optionalText) => !optionalText.question_text)
+                  .map((optionalText, index) => (
                   <article
                     key={`${optionalText.input_type}-${optionalText.question_text ?? "final"}-${index}`}
                     className="rounded-xl bg-white p-4 shadow-sm"
@@ -817,14 +844,11 @@ export default function Home() {
                     <p className="text-sm font-semibold text-emerald-700">
                       {optionalText.input_type}
                     </p>
-                    {optionalText.question_text && (
-                      <p className="mt-1 font-bold text-slate-800">{optionalText.question_text}</p>
-                    )}
                     <p className="mt-3 whitespace-pre-wrap leading-7 text-slate-700">
                       {optionalText.content}
                     </p>
                   </article>
-                ))}
+                  ))}
               </div>
             </section>
           )}
