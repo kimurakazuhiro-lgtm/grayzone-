@@ -248,6 +248,7 @@ export default function Home() {
   const [exerciseTopics, setExerciseTopics] = useState<ResultRow[]>([]);
   const [lastSelectedExerciseId, setLastSelectedExerciseId] = useState("");
   const [exerciseTopicIndex, setExerciseTopicIndex] = useState(0);
+  const [isExerciseScreen, setIsExerciseScreen] = useState(false);
   const [exerciseSelectionMessage, setExerciseSelectionMessage] = useState("");
   const [groupInsights, setGroupInsights] = useState("");
   const [improvementIdeas, setImprovementIdeas] = useState("");
@@ -427,6 +428,7 @@ export default function Home() {
     setImprovementIdeas("");
     setNoteStatus("");
     setExerciseSelectionMessage("");
+    setIsExerciseScreen(true);
   };
 
   const goToNextExercise = () => {
@@ -564,6 +566,77 @@ export default function Home() {
           >
             アンケート画面へ戻る
           </Link>
+        </section>
+      </main>
+    );
+  }
+
+  if (isResultsRoute && isExerciseScreen && selectedExercise) {
+    return (
+      <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
+        <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-sm">
+          <p className="text-sm font-semibold text-emerald-700">グレーゾーンアンケート</p>
+          <h1 className="mt-4 text-3xl font-bold">演習・グループ記録</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            演習テーマ（{exerciseTopicIndex + 1} / {exerciseTopics.length}）
+          </p>
+          <h2 className="mt-3 text-xl font-bold leading-8">{selectedExercise.question_text}</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            個人や利用者を特定できる情報は書かず、グループで話し合った内容を記録してください。
+          </p>
+
+          <label className="mt-6 block text-sm font-semibold text-slate-700">
+            グループの気づき
+            <textarea
+              value={groupInsights}
+              onChange={(event) => setGroupInsights(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
+              rows={5}
+              placeholder="例：本人の希望を確認する機会が少ない"
+            />
+          </label>
+
+          <label className="mt-5 block text-sm font-semibold text-slate-700">
+            改善案
+            <textarea
+              value={improvementIdeas}
+              onChange={(event) => setImprovementIdeas(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
+              rows={5}
+              placeholder="例：支援前に本人の希望を確認する時間を設ける"
+            />
+          </label>
+
+          {noteStatus && <p className="mt-4 text-sm font-semibold text-emerald-700">{noteStatus}</p>}
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={saveWorkshopNote}
+              className="flex-1 rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
+            >
+              記録を保存する
+            </button>
+            {exerciseTopicIndex < exerciseTopics.length - 1 && (
+              <button
+                type="button"
+                onClick={goToNextExercise}
+                className="rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
+              >
+                次の項目を演習する
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedExercise(null);
+                setIsExerciseScreen(false);
+              }}
+              className="rounded-xl border border-slate-300 px-5 py-4 font-bold text-slate-700"
+            >
+              結果一覧へ戻る
+            </button>
+          </div>
         </section>
       </main>
     );
