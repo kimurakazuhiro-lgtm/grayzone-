@@ -253,6 +253,7 @@ export default function Home() {
   const [noteStatus, setNoteStatus] = useState("");
   const [finished, setFinished] = useState(false);
   const [isReviewingSubmittedAnswers, setIsReviewingSubmittedAnswers] = useState(false);
+  const [isEndConfirmationOpen, setIsEndConfirmationOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
@@ -337,6 +338,21 @@ export default function Home() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const endResponse = () => {
+    setIsEndConfirmationOpen(false);
+    setIsReviewingSubmittedAnswers(false);
+    setFinished(false);
+    setShowFinalSuggestion(false);
+    setStarted(false);
+    setServiceType("");
+    setSurveyQuestions(questions.slice(0, defaultQuestionsPerSurvey));
+    setCurrentQuestion(0);
+    setAnswers({});
+    setResponseKeys({});
+    setEpisodes({});
+    setFieldSuggestion("");
   };
 
   useEffect(() => {
@@ -905,6 +921,45 @@ export default function Home() {
           >
             自分の回答を確認する
           </button>
+          <button
+            type="button"
+            onClick={() => setIsEndConfirmationOpen(true)}
+            className="mt-3 w-full rounded-xl border border-slate-300 px-5 py-4 font-bold text-slate-700"
+          >
+            回答を終了する
+          </button>
+
+          {isEndConfirmationOpen && (
+            <section
+              className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 text-left"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="end-confirmation-title"
+            >
+              <h2 id="end-confirmation-title" className="font-bold text-slate-800">
+                回答を終了しますか？
+              </h2>
+              <p className="mt-2 leading-7 text-slate-600">
+                終了すると、この画面から自分の回答を確認できなくなります。よろしいですか？
+              </p>
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEndConfirmationOpen(false)}
+                  className="flex-1 rounded-xl border border-slate-300 px-4 py-3 font-bold text-slate-700"
+                >
+                  戻る
+                </button>
+                <button
+                  type="button"
+                  onClick={endResponse}
+                  className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white"
+                >
+                  終了する
+                </button>
+              </div>
+            </section>
+          )}
         </section>
       </main>
     );
