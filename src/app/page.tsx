@@ -680,7 +680,11 @@ export default function Home() {
                   return (
                     <article
                       key={`top-${row.category}-${row.question_text}`}
-                      className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-emerald-200"
+                      className={`rounded-xl p-4 shadow-sm ring-1 ${
+                        isSelected
+                          ? "bg-emerald-100 ring-2 ring-emerald-600"
+                          : "bg-white ring-emerald-200"
+                      }`}
                     >
                       <span className="text-sm font-semibold text-emerald-700">
                         第{index + 1}候補・入る {Number(row.entered_count)}件
@@ -723,7 +727,11 @@ export default function Home() {
               return (
                 <article
                   key={`${row.category}-${row.question_text}`}
-                  className="rounded-2xl border border-slate-200 p-5"
+                  className={`rounded-2xl border p-5 ${
+                    isSelectedForExercise
+                      ? "border-2 border-emerald-600 bg-emerald-50"
+                      : "border-slate-200 bg-white"
+                  }`}
                 >
                   <p className="text-sm font-semibold text-emerald-700">{row.category}</p>
                   <h2 className="mt-2 text-lg font-bold">{row.question_text}</h2>
