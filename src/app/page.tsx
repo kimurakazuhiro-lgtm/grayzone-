@@ -248,7 +248,7 @@ export default function Home() {
   const [exerciseTopics, setExerciseTopics] = useState<ResultRow[]>([]);
   const [exerciseTopicIndex, setExerciseTopicIndex] = useState(0);
   const [isExerciseScreen, setIsExerciseScreen] = useState(false);
-  const [exerciseSelectionMessage, setExerciseSelectionMessage] = useState("");
+  const [exerciseLimitQuestion, setExerciseLimitQuestion] = useState("");
   const [groupInsights, setGroupInsights] = useState("");
   const [improvementIdeas, setImprovementIdeas] = useState("");
   const [noteStatus, setNoteStatus] = useState("");
@@ -402,11 +402,11 @@ export default function Home() {
     const willSelectSecondTopic = !isSelected && exerciseTopics.length === 1;
 
     if (!isSelected && exerciseTopics.length === 2) {
-      setExerciseSelectionMessage("演習テーマは2項目まで選べます。");
+      setExerciseLimitQuestion(row.question_text);
       return;
     }
 
-    setExerciseSelectionMessage("");
+    setExerciseLimitQuestion("");
     if (isSelected) {
       setExerciseTopics((previous) => previous.filter((item) => item.question_text !== row.question_text));
       return;
@@ -433,7 +433,7 @@ export default function Home() {
     setGroupInsights("");
     setImprovementIdeas("");
     setNoteStatus("");
-    setExerciseSelectionMessage("");
+    setExerciseLimitQuestion("");
     setIsExerciseScreen(true);
   };
 
@@ -697,13 +697,15 @@ export default function Home() {
                       >
                         {isSelected ? "選択済み" : "演習に選ぶ"}
                       </button>
+                      {exerciseLimitQuestion === row.question_text && (
+                        <p className="mt-3 text-sm font-semibold text-amber-700">
+                          演習テーマは2項目まで選べます。
+                        </p>
+                      )}
                     </article>
                   );
                 })}
               </div>
-              {exerciseSelectionMessage && (
-                <p className="mt-3 text-sm font-semibold text-amber-700">{exerciseSelectionMessage}</p>
-              )}
             </section>
           )}
 
@@ -768,6 +770,11 @@ export default function Home() {
                   >
                     {isSelectedForExercise ? "選択済み" : "演習に選ぶ"}
                   </button>
+                  {exerciseLimitQuestion === row.question_text && (
+                    <p className="mt-3 text-sm font-semibold text-amber-700">
+                      演習テーマは2項目まで選べます。
+                    </p>
+                  )}
                 </article>
               );
             })}
@@ -789,9 +796,6 @@ export default function Home() {
               >
                 選択した{exerciseTopics.length}項目を演習する
               </button>
-              {exerciseSelectionMessage && (
-                <p className="mt-3 text-sm font-semibold text-amber-700">{exerciseSelectionMessage}</p>
-              )}
             </section>
           )}
 
