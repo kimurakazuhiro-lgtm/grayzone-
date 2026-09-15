@@ -327,6 +327,8 @@ export default function Home() {
         return;
       }
 
+      setShowFinalSuggestion(false);
+      setSubmitMessage("");
       setFinished(true);
     } catch {
       setSubmitMessage(
