@@ -246,6 +246,7 @@ export default function Home() {
   const [grantedAccessCode, setGrantedAccessCode] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<ResultRow | null>(null);
   const [exerciseTopics, setExerciseTopics] = useState<ResultRow[]>([]);
+  const [lastSelectedExerciseId, setLastSelectedExerciseId] = useState("");
   const [exerciseTopicIndex, setExerciseTopicIndex] = useState(0);
   const [exerciseSelectionMessage, setExerciseSelectionMessage] = useState("");
   const [groupInsights, setGroupInsights] = useState("");
@@ -396,7 +397,7 @@ export default function Home() {
     setIsLoadingResults(false);
   };
 
-  const toggleExerciseTopic = (row: ResultRow) => {
+  const toggleExerciseTopic = (row: ResultRow, selectionId: string) => {
     const isSelected = exerciseTopics.some((item) => item.question_text === row.question_text);
 
     if (!isSelected && exerciseTopics.length === 2) {
@@ -405,11 +406,14 @@ export default function Home() {
     }
 
     setExerciseSelectionMessage("");
-    setExerciseTopics((previous) =>
-      isSelected
-        ? previous.filter((item) => item.question_text !== row.question_text)
-        : [...previous, row],
-    );
+    if (isSelected) {
+      setExerciseTopics((previous) => previous.filter((item) => item.question_text !== row.question_text));
+      if (lastSelectedExerciseId === selectionId) setLastSelectedExerciseId("");
+      return;
+    }
+
+    setExerciseTopics((previous) => [...previous, row]);
+    setLastSelectedExerciseId(selectionId);
   };
 
   const startSelectedExercises = () => {
@@ -593,6 +597,9 @@ export default function Home() {
               <div className="mt-4 grid gap-3">
                 {topExerciseRows.map((row, index) => {
                   const isSelected = exerciseTopics.some((item) => item.question_text === row.question_text);
+                  const selectionId = `top-${row.category}-${row.question_text}`;
+                  const isSecondSelectedHere =
+                    isSelected && exerciseTopics.length === 2 && lastSelectedExerciseId === selectionId;
 
                   return (
                     <article
@@ -605,27 +612,37 @@ export default function Home() {
                       <span className="mt-1 block font-bold text-slate-800">{row.question_text}</span>
                       <button
                         type="button"
-                        onClick={() => toggleExerciseTopic(row)}
+                        onClick={() =>
+                          isSecondSelectedHere
+                            ? startSelectedExercises()
+                            : toggleExerciseTopic(row, selectionId)
+                        }
                         className={`mt-4 w-full rounded-xl px-4 py-3 font-bold ${
                           isSelected
                             ? "bg-emerald-700 text-white"
                             : "border border-emerald-700 text-emerald-700 hover:bg-emerald-50"
                         }`}
                       >
-                        {isSelected ? "選択済み" : "演習に選ぶ"}
+                        {isSecondSelectedHere
+                          ? "選択した2項目を演習する"
+                          : isSelected
+                            ? "選択済み"
+                            : "演習に選ぶ"}
                       </button>
                     </article>
                   );
                 })}
               </div>
-              <button
-                type="button"
-                onClick={startSelectedExercises}
-                disabled={exerciseTopics.length === 0}
-                className="mt-4 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300"
-              >
-                選択した{exerciseTopics.length}項目を演習する
-              </button>
+              {exerciseTopics.length < 2 && (
+                <button
+                  type="button"
+                  onClick={startSelectedExercises}
+                  disabled={exerciseTopics.length === 0}
+                  className="mt-4 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300"
+                >
+                  選択した{exerciseTopics.length}項目を演習する
+                </button>
+              )}
               {exerciseSelectionMessage && (
                 <p className="mt-3 text-sm font-semibold text-amber-700">{exerciseSelectionMessage}</p>
               )}
@@ -640,6 +657,9 @@ export default function Home() {
               const isSelectedForExercise = exerciseTopics.some(
                 (item) => item.question_text === row.question_text,
               );
+              const selectionId = `result-${row.category}-${row.question_text}`;
+              const isSecondSelectedHere =
+                isSelectedForExercise && exerciseTopics.length === 2 && lastSelectedExerciseId === selectionId;
               const enteredPercentage =
                 responseCount === 0 ? 0 : Math.round((enteredCount / responseCount) * 100);
 
@@ -684,21 +704,29 @@ export default function Home() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => toggleExerciseTopic(row)}
+                    onClick={() =>
+                      isSecondSelectedHere
+                        ? startSelectedExercises()
+                        : toggleExerciseTopic(row, selectionId)
+                    }
                     className={`mt-5 w-full rounded-xl px-5 py-3 font-bold ${
                       isSelectedForExercise
                         ? "bg-emerald-700 text-white"
                         : "border border-emerald-700 text-emerald-700 hover:bg-emerald-50"
                     }`}
                   >
-                    {isSelectedForExercise ? "選択済み" : "演習に選ぶ"}
+                    {isSecondSelectedHere
+                      ? "選択した2項目を演習する"
+                      : isSelectedForExercise
+                        ? "選択済み"
+                        : "演習に選ぶ"}
                   </button>
                 </article>
               );
             })}
           </div>
 
-          {!isLoadingResults && !resultsError && resultRows.length > 0 && (
+          {!isLoadingResults && !resultsError && resultRows.length > 0 && exerciseTopics.length < 2 && (
             <section className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
               <p className="text-sm leading-6 text-slate-700">
                 演習テーマは1〜2項目まで選択できます。上位2項目以外から選んでも問題ありません。
