@@ -252,6 +252,7 @@ export default function Home() {
   const [improvementIdeas, setImprovementIdeas] = useState("");
   const [noteStatus, setNoteStatus] = useState("");
   const [finished, setFinished] = useState(false);
+  const [isReviewingSubmittedAnswers, setIsReviewingSubmittedAnswers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const question = surveyQuestions[currentQuestion];
@@ -810,6 +811,66 @@ export default function Home() {
     );
   }
 
+  if (finished && isReviewingSubmittedAnswers) {
+    return (
+      <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
+        <section className="mx-auto max-w-2xl rounded-3xl bg-white p-8 shadow-sm">
+          <p className="text-sm font-semibold text-emerald-700">
+            グレーゾーンアンケート
+          </p>
+          <h1 className="mt-4 text-3xl font-bold">自分の回答を確認する</h1>
+          <p className="mt-5 leading-7 text-slate-600">
+            今回送信した回答内容です。この画面を閉じると、個別の回答は確認できなくなります。
+          </p>
+
+          <dl className="mt-7 rounded-xl bg-emerald-50 p-5">
+            <dt className="text-sm font-semibold text-slate-600">選択した事業種</dt>
+            <dd className="mt-1 text-lg font-bold">{serviceType}</dd>
+          </dl>
+
+          <div className="mt-7 space-y-5">
+            {surveyQuestions.map((surveyQuestion, index) => (
+              <article key={`${surveyQuestion.category}-${surveyQuestion.text}`} className="rounded-xl border border-slate-200 p-5">
+                <p className="text-sm font-semibold text-slate-500">
+                  {index + 1}. {surveyQuestion.category}
+                </p>
+                <h2 className="mt-2 font-bold leading-7">{surveyQuestion.text}</h2>
+                <p className="mt-4 font-semibold text-emerald-700">
+                  回答：{answers[index] ?? "未回答"}
+                </p>
+                {answers[index] === "入る" && (responseKeys[index] ?? []).length > 0 && (
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    選んだ観点：{responseKeys[index].join("・")}
+                  </p>
+                )}
+                {episodes[index] && (
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                    エピソード：{episodes[index]}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+
+          {fieldSuggestion && (
+            <section className="mt-7 rounded-xl border border-slate-200 p-5">
+              <h2 className="font-bold">気になった対応</h2>
+              <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-600">{fieldSuggestion}</p>
+            </section>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsReviewingSubmittedAnswers(false)}
+            className="mt-8 w-full rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
+          >
+            完了画面に戻る
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   if (finished) {
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
@@ -820,8 +881,15 @@ export default function Home() {
           <h1 className="mt-4 text-3xl font-bold">回答を受け取りました</h1>
           <p className="mt-5 leading-7 text-slate-600">
             ご回答ありがとうございます。
-            これは動作確認用の完了画面です。
+            必要に応じて、今回送信した回答を確認できます。
           </p>
+          <button
+            type="button"
+            onClick={() => setIsReviewingSubmittedAnswers(true)}
+            className="mt-7 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
+          >
+            自分の回答を確認する
+          </button>
         </section>
       </main>
     );
