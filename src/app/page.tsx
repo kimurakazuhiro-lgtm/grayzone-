@@ -785,17 +785,14 @@ export default function Home() {
                   </div>
                   {questionOptionalTexts.length > 0 && (
                     <div className="mt-5 border-t border-slate-100 pt-4">
-                      <p className="text-sm font-semibold text-slate-700">任意入力</p>
+                      <p className="text-sm font-semibold text-slate-700">関連するエピソード（任意）</p>
                       <div className="mt-3 grid gap-3">
                         {questionOptionalTexts.map((optionalText, index) => (
                           <div
                             key={`${optionalText.input_type}-${index}`}
                             className="rounded-xl bg-emerald-50 p-4"
                           >
-                            <p className="text-sm font-semibold text-emerald-700">
-                              {optionalText.input_type}
-                            </p>
-                            <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-700">
+                            <p className="whitespace-pre-wrap leading-7 text-slate-700">
                               {optionalText.content}
                             </p>
                           </div>
