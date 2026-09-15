@@ -825,8 +825,7 @@ export default function Home() {
             !resultsError &&
             optionalTexts.some((optionalText) => !optionalText.question_text) && (
             <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-              <p className="text-sm font-semibold text-emerald-700">最後の任意入力</p>
-              <h2 className="mt-2 text-xl font-bold">参加者が最後に入力した気になった対応</h2>
+              <h2 className="text-xl font-bold">気になった対応（任意）</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 個人や利用者を特定できる情報が含まれていないか確認し、取扱いにご注意ください。
               </p>
@@ -838,10 +837,7 @@ export default function Home() {
                     key={`${optionalText.input_type}-${optionalText.question_text ?? "final"}-${index}`}
                     className="rounded-xl bg-white p-4 shadow-sm"
                   >
-                    <p className="text-sm font-semibold text-emerald-700">
-                      {optionalText.input_type}
-                    </p>
-                    <p className="mt-3 whitespace-pre-wrap leading-7 text-slate-700">
+                    <p className="whitespace-pre-wrap leading-7 text-slate-700">
                       {optionalText.content}
                     </p>
                   </article>
