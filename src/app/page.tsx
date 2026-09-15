@@ -210,6 +210,13 @@ type ResultRow = {
   five_keys: Record<string, number>;
 };
 
+type OptionalText = {
+  category: string | null;
+  question_text: string | null;
+  input_type: string;
+  content: string;
+};
+
 function selectRandomQuestions(count: number) {
   const shuffledQuestions = [...questions];
 
@@ -240,6 +247,7 @@ export default function Home() {
   const pathname = usePathname();
   const isResultsRoute = pathname === "/results";
   const [resultRows, setResultRows] = useState<ResultRow[]>([]);
+  const [optionalTexts, setOptionalTexts] = useState<OptionalText[]>([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [resultsError, setResultsError] = useState("");
   const [resultsAccessCode, setResultsAccessCode] = useState("");
@@ -388,10 +396,15 @@ export default function Home() {
     if (error) {
       setResultsError("閲覧コードが違うか、結果はまだ公開されていません。");
       setResultRows([]);
+      setOptionalTexts([]);
       setGrantedAccessCode("");
     } else {
       setGrantedAccessCode(accessCode);
       setResultRows((data ?? []) as ResultRow[]);
+      const { data: optionalTextData } = await supabase.rpc("get_workshop_optional_texts", {
+        p_access_code: accessCode,
+      });
+      setOptionalTexts((optionalTextData ?? []) as OptionalText[]);
     }
 
     setIsLoadingResults(false);
@@ -787,6 +800,34 @@ export default function Home() {
               );
             })}
           </div>
+
+          {!isLoadingResults && !resultsError && optionalTexts.length > 0 && (
+            <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+              <p className="text-sm font-semibold text-emerald-700">任意入力の内容</p>
+              <h2 className="mt-2 text-xl font-bold">参加者が入力した補足・気になった対応</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                個人や利用者を特定できる情報が含まれていないか確認し、取扱いにご注意ください。
+              </p>
+              <div className="mt-4 grid gap-3">
+                {optionalTexts.map((optionalText, index) => (
+                  <article
+                    key={`${optionalText.input_type}-${optionalText.question_text ?? "final"}-${index}`}
+                    className="rounded-xl bg-white p-4 shadow-sm"
+                  >
+                    <p className="text-sm font-semibold text-emerald-700">
+                      {optionalText.input_type}
+                    </p>
+                    {optionalText.question_text && (
+                      <p className="mt-1 font-bold text-slate-800">{optionalText.question_text}</p>
+                    )}
+                    <p className="mt-3 whitespace-pre-wrap leading-7 text-slate-700">
+                      {optionalText.content}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
 
           {!isLoadingResults && !resultsError && resultRows.length > 0 && (
             <section
