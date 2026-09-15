@@ -328,6 +328,10 @@ export default function Home() {
       }
 
       setFinished(true);
+    } catch {
+      setSubmitMessage(
+        "回答の送信中に通信エラーが発生しました。通信を確認して、もう一度お試しください。",
+      );
     } finally {
       setIsSubmitting(false);
     }
