@@ -260,6 +260,8 @@ export default function Home() {
   const [groupInsights, setGroupInsights] = useState("");
   const [improvementIdeas, setImprovementIdeas] = useState("");
   const [noteStatus, setNoteStatus] = useState("");
+  const [isExerciseNoteSaved, setIsExerciseNoteSaved] = useState(false);
+  const [isUnsavedExerciseConfirmationOpen, setIsUnsavedExerciseConfirmationOpen] = useState(false);
   const [finished, setFinished] = useState(false);
   const [isReviewingSubmittedAnswers, setIsReviewingSubmittedAnswers] = useState(false);
   const [isEditingSubmittedResponse, setIsEditingSubmittedResponse] = useState(false);
@@ -462,6 +464,8 @@ export default function Home() {
     setGroupInsights("");
     setImprovementIdeas("");
     setNoteStatus("");
+    setIsExerciseNoteSaved(false);
+    setIsUnsavedExerciseConfirmationOpen(false);
     setExerciseLimitQuestion("");
     setIsExerciseScreen(true);
   };
@@ -477,6 +481,17 @@ export default function Home() {
     setGroupInsights("");
     setImprovementIdeas("");
     setNoteStatus("");
+    setIsExerciseNoteSaved(false);
+    setIsUnsavedExerciseConfirmationOpen(false);
+  };
+
+  const requestNextExercise = () => {
+    if (isExerciseNoteSaved) {
+      goToNextExercise();
+      return;
+    }
+
+    setIsUnsavedExerciseConfirmationOpen(true);
   };
 
   const saveWorkshopNote = async () => {
@@ -495,9 +510,13 @@ export default function Home() {
       p_improvements: improvementIdeas.trim(),
     });
 
-    setNoteStatus(
-      error ? "記録を保存できませんでした。時間をおいて再度お試しください。" : "グループ記録を保存しました。",
-    );
+    if (error) {
+      setNoteStatus("記録を保存できませんでした。時間をおいて再度お試しください。");
+      return;
+    }
+
+    setIsExerciseNoteSaved(true);
+    setNoteStatus("グループ記録を保存しました。");
   };
 
   if (!started && !isResultsRoute) {
@@ -624,7 +643,10 @@ export default function Home() {
             グループの気づき
             <textarea
               value={groupInsights}
-              onChange={(event) => setGroupInsights(event.target.value)}
+              onChange={(event) => {
+                setGroupInsights(event.target.value);
+                setIsExerciseNoteSaved(false);
+              }}
               className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
               rows={5}
               placeholder="例：本人の希望を確認する機会が少ない"
@@ -635,7 +657,10 @@ export default function Home() {
             改善案
             <textarea
               value={improvementIdeas}
-              onChange={(event) => setImprovementIdeas(event.target.value)}
+              onChange={(event) => {
+                setImprovementIdeas(event.target.value);
+                setIsExerciseNoteSaved(false);
+              }}
               className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
               rows={5}
               placeholder="例：支援前に本人の希望を確認する時間を設ける"
@@ -655,7 +680,7 @@ export default function Home() {
             {exerciseTopicIndex < exerciseTopics.length - 1 && (
               <button
                 type="button"
-                onClick={goToNextExercise}
+                onClick={requestNextExercise}
                 className="rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
               >
                 次の項目を演習する
@@ -672,6 +697,38 @@ export default function Home() {
               結果一覧へ戻る
             </button>
           </div>
+
+          {isUnsavedExerciseConfirmationOpen && (
+            <section
+              className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="unsaved-exercise-title"
+            >
+              <h2 id="unsaved-exercise-title" className="font-bold text-slate-800">
+                記録が保存されていません
+              </h2>
+              <p className="mt-2 leading-7 text-slate-700">
+                このまま演習2へ進むと、入力した記録は保存されません。よろしいですか？
+              </p>
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsUnsavedExerciseConfirmationOpen(false)}
+                  className="flex-1 rounded-xl border border-slate-300 px-4 py-3 font-bold text-slate-700"
+                >
+                  戻る
+                </button>
+                <button
+                  type="button"
+                  onClick={goToNextExercise}
+                  className="flex-1 rounded-xl bg-amber-700 px-4 py-3 font-bold text-white hover:bg-amber-800"
+                >
+                  保存せず進む
+                </button>
+              </div>
+            </section>
+          )}
         </section>
       </main>
     );
@@ -895,7 +952,10 @@ export default function Home() {
                 グループの気づき
                 <textarea
                   value={groupInsights}
-                  onChange={(event) => setGroupInsights(event.target.value)}
+                  onChange={(event) => {
+                    setGroupInsights(event.target.value);
+                    setIsExerciseNoteSaved(false);
+                  }}
                   className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
                   rows={4}
                   placeholder="例：本人の希望を確認する機会が少ない"
@@ -906,7 +966,10 @@ export default function Home() {
                 改善案
                 <textarea
                   value={improvementIdeas}
-                  onChange={(event) => setImprovementIdeas(event.target.value)}
+                  onChange={(event) => {
+                    setImprovementIdeas(event.target.value);
+                    setIsExerciseNoteSaved(false);
+                  }}
                   className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
                   rows={4}
                   placeholder="例：支援前に本人の希望を確認する時間を設ける"
@@ -926,7 +989,7 @@ export default function Home() {
                 {exerciseTopicIndex < exerciseTopics.length - 1 && (
                   <button
                     type="button"
-                    onClick={goToNextExercise}
+                    onClick={requestNextExercise}
                     className="rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
                   >
                     次の項目を演習する
