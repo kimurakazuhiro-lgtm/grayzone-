@@ -262,6 +262,8 @@ export default function Home() {
   const [noteStatus, setNoteStatus] = useState("");
   const [finished, setFinished] = useState(false);
   const [isReviewingSubmittedAnswers, setIsReviewingSubmittedAnswers] = useState(false);
+  const [isEditingSubmittedResponse, setIsEditingSubmittedResponse] = useState(false);
+  const [editToken, setEditToken] = useState("");
   const [isEndConfirmationOpen, setIsEndConfirmationOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
@@ -299,6 +301,7 @@ export default function Home() {
 
     setQuestionCount(count);
     setSurveyQuestions(selectRandomQuestions(count));
+    setEditToken(crypto.randomUUID());
     setStarted(true);
   };
 
@@ -306,20 +309,30 @@ export default function Home() {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    setSubmitMessage("回答を送信しています。画面はそのままでお待ちください。");
+    setSubmitMessage(
+      isEditingSubmittedResponse
+        ? "変更を保存しています。画面はそのままでお待ちください。"
+        : "回答を送信しています。画面はそのままでお待ちください。",
+    );
+
+    const responseData = {
+      serviceType,
+      questions: surveyQuestions,
+      answers,
+      responseKeys,
+      episodes,
+      fieldSuggestion,
+      editToken,
+    };
 
     try {
       const response = await Promise.race([
-        supabase.from("responses").insert({
-          answers: {
-            serviceType,
-            questions: surveyQuestions,
-            answers,
-            responseKeys,
-            episodes,
-            fieldSuggestion,
-          },
-        }),
+        isEditingSubmittedResponse
+          ? supabase.rpc("update_workshop_response", {
+              p_edit_token: editToken,
+              p_answers: responseData,
+            })
+          : supabase.from("responses").insert({ answers: responseData }),
         new Promise<null>((resolve) => {
           window.setTimeout(() => resolve(null), 15000);
         }),
@@ -339,6 +352,7 @@ export default function Home() {
 
       setShowFinalSuggestion(false);
       setSubmitMessage("");
+      setIsEditingSubmittedResponse(false);
       setFinished(true);
     } catch {
       setSubmitMessage(
@@ -352,6 +366,7 @@ export default function Home() {
   const endResponse = () => {
     setIsEndConfirmationOpen(false);
     setIsReviewingSubmittedAnswers(false);
+    setIsEditingSubmittedResponse(false);
     setFinished(false);
     setShowFinalSuggestion(false);
     setStarted(false);
@@ -362,6 +377,7 @@ export default function Home() {
     setResponseKeys({});
     setEpisodes({});
     setFieldSuggestion("");
+    setEditToken("");
   };
 
   useEffect(() => {
@@ -977,7 +993,13 @@ export default function Home() {
               disabled={isSubmitting}
               className="flex-1 rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
             >
-              {isSubmitting ? "送信中です..." : "回答を送信する"}
+              {isSubmitting
+                ? isEditingSubmittedResponse
+                  ? "保存中です..."
+                  : "送信中です..."
+                : isEditingSubmittedResponse
+                  ? "変更を保存する"
+                  : "回答を送信する"}
             </button>
           </div>
           {submitMessage && (
@@ -1040,8 +1062,22 @@ export default function Home() {
 
           <button
             type="button"
+            onClick={() => {
+              setIsReviewingSubmittedAnswers(false);
+              setFinished(false);
+              setShowFinalSuggestion(false);
+              setCurrentQuestion(0);
+              setSubmitMessage("");
+              setIsEditingSubmittedResponse(true);
+            }}
+            className="mt-8 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
+          >
+            回答を編集する
+          </button>
+          <button
+            type="button"
             onClick={() => setIsReviewingSubmittedAnswers(false)}
-            className="mt-8 w-full rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
+            className="mt-3 w-full rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
           >
             完了画面に戻る
           </button>
