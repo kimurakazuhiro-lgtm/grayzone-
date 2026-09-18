@@ -720,7 +720,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setIsExerciseEndConfirmationOpen(true)}
-            className="mt-8 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
+            className="mt-8 w-full rounded-xl border-2 border-slate-900 bg-white px-5 py-4 font-bold text-slate-700 hover:bg-slate-50"
           >
             終了する
           </button>
