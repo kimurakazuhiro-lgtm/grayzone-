@@ -217,6 +217,13 @@ type OptionalText = {
   content: string;
 };
 
+type ExerciseRecord = {
+  category: string;
+  questionText: string;
+  insights: string;
+  improvements: string;
+};
+
 function selectRandomQuestions(count: number) {
   const shuffledQuestions = [...questions];
 
@@ -256,6 +263,8 @@ export default function Home() {
   const [exerciseTopics, setExerciseTopics] = useState<ResultRow[]>([]);
   const [exerciseTopicIndex, setExerciseTopicIndex] = useState(0);
   const [isExerciseScreen, setIsExerciseScreen] = useState(false);
+  const [isExerciseReviewScreen, setIsExerciseReviewScreen] = useState(false);
+  const [exerciseRecords, setExerciseRecords] = useState<ExerciseRecord[]>([]);
   const [exerciseLimitQuestion, setExerciseLimitQuestion] = useState("");
   const [groupInsights, setGroupInsights] = useState("");
   const [improvementIdeas, setImprovementIdeas] = useState("");
@@ -466,6 +475,8 @@ export default function Home() {
     setNoteStatus("");
     setIsExerciseNoteSaved(false);
     setIsUnsavedExerciseConfirmationOpen(false);
+    setIsExerciseReviewScreen(false);
+    setExerciseRecords([]);
     setExerciseLimitQuestion("");
     setIsExerciseScreen(true);
   };
@@ -517,6 +528,23 @@ export default function Home() {
 
     setIsExerciseNoteSaved(true);
     setNoteStatus("グループ記録を保存しました。");
+    setExerciseRecords((previous) => {
+      const currentRecord = {
+        category: selectedExercise.category,
+        questionText: selectedExercise.question_text,
+        insights: groupInsights.trim(),
+        improvements: improvementIdeas.trim(),
+      };
+
+      return [
+        ...previous.filter((record) => record.questionText !== selectedExercise.question_text),
+        currentRecord,
+      ];
+    });
+
+    if (exerciseTopicIndex === exerciseTopics.length - 1) {
+      setIsExerciseReviewScreen(true);
+    }
   };
 
   if (!started && !isResultsRoute) {
@@ -625,6 +653,54 @@ export default function Home() {
     );
   }
 
+  if (isResultsRoute && isExerciseReviewScreen) {
+    return (
+      <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
+        <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-sm">
+          <p className="text-sm font-semibold text-emerald-700">グレーゾーンアンケート</p>
+          <h1 className="mt-4 text-3xl font-bold">演習内容の確認</h1>
+          <p className="mt-5 leading-7 text-slate-600">
+            今回保存した演習・グループ記録のみを確認できます。
+          </p>
+
+          <div className="mt-7 space-y-5">
+            {exerciseRecords.map((record, index) => (
+              <article key={record.questionText} className="rounded-2xl border border-emerald-200 p-5">
+                <p className="text-sm font-semibold text-emerald-700">演習テーマ {index + 1}</p>
+                <h2 className="mt-2 text-xl font-bold leading-8">{record.questionText}</h2>
+                {record.insights && (
+                  <section className="mt-5 rounded-xl bg-emerald-50 p-4">
+                    <h3 className="font-bold">グループの気づき</h3>
+                    <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-700">{record.insights}</p>
+                  </section>
+                )}
+                {record.improvements && (
+                  <section className="mt-4 rounded-xl bg-emerald-50 p-4">
+                    <h3 className="font-bold">改善案</h3>
+                    <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-700">{record.improvements}</p>
+                  </section>
+                )}
+              </article>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsExerciseReviewScreen(false);
+              setIsExerciseScreen(false);
+              setSelectedExercise(null);
+              setExerciseRecords([]);
+            }}
+            className="mt-8 w-full rounded-xl bg-amber-700 px-5 py-4 font-bold text-white hover:bg-amber-800"
+          >
+            終了する
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   if (isResultsRoute && isExerciseScreen && selectedExercise) {
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
@@ -675,7 +751,9 @@ export default function Home() {
               onClick={saveWorkshopNote}
               className="flex-1 rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
             >
-              記録を保存する
+              {exerciseTopicIndex === exerciseTopics.length - 1
+                ? "保存して提出する"
+                : "記録を保存する"}
             </button>
             {exerciseTopicIndex < exerciseTopics.length - 1 && (
               <button
