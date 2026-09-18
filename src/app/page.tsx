@@ -265,6 +265,10 @@ export default function Home() {
   const [isExerciseScreen, setIsExerciseScreen] = useState(false);
   const [isExerciseReviewScreen, setIsExerciseReviewScreen] = useState(false);
   const [exerciseRecords, setExerciseRecords] = useState<ExerciseRecord[]>([]);
+  const [exerciseDrafts, setExerciseDrafts] = useState<
+    Record<string, { insights: string; improvements: string }>
+  >({});
+  const [savedExerciseTopicTexts, setSavedExerciseTopicTexts] = useState<string[]>([]);
   const [exerciseLimitQuestion, setExerciseLimitQuestion] = useState("");
   const [groupInsights, setGroupInsights] = useState("");
   const [improvementIdeas, setImprovementIdeas] = useState("");
@@ -463,37 +467,52 @@ export default function Home() {
     }
   };
 
-  const startSelectedExercises = () => {
-    const firstTopic = exerciseTopics[0];
+  const moveToExercise = (index: number) => {
+    const topic = exerciseTopics[index];
 
-    if (!firstTopic) return;
+    if (!topic) return;
 
-    setExerciseTopicIndex(0);
-    setSelectedExercise(firstTopic);
-    setGroupInsights("");
-    setImprovementIdeas("");
+    const draft = exerciseDrafts[topic.question_text];
+
+    setExerciseTopicIndex(index);
+    setSelectedExercise(topic);
+    setGroupInsights(draft?.insights ?? "");
+    setImprovementIdeas(draft?.improvements ?? "");
     setNoteStatus("");
-    setIsExerciseNoteSaved(false);
+    setIsExerciseNoteSaved(savedExerciseTopicTexts.includes(topic.question_text));
     setIsUnsavedExerciseConfirmationOpen(false);
+  };
+
+  const startSelectedExercises = () => {
+    if (!exerciseTopics[0]) return;
+
     setIsExerciseReviewScreen(false);
-    setExerciseRecords([]);
     setExerciseLimitQuestion("");
     setIsExerciseScreen(true);
+    moveToExercise(0);
   };
 
   const goToNextExercise = () => {
     const nextIndex = exerciseTopicIndex + 1;
-    const nextTopic = exerciseTopics[nextIndex];
+    moveToExercise(nextIndex);
+  };
 
-    if (!nextTopic) return;
+  const goToPreviousExercise = () => {
+    moveToExercise(exerciseTopicIndex - 1);
+  };
 
-    setExerciseTopicIndex(nextIndex);
-    setSelectedExercise(nextTopic);
-    setGroupInsights("");
-    setImprovementIdeas("");
-    setNoteStatus("");
+  const updateExerciseDraft = (field: "insights" | "improvements", value: string) => {
+    if (!selectedExercise) return;
+
+    setExerciseDrafts((previous) => ({
+      ...previous,
+      [selectedExercise.question_text]: {
+        insights: previous[selectedExercise.question_text]?.insights ?? groupInsights,
+        improvements: previous[selectedExercise.question_text]?.improvements ?? improvementIdeas,
+        [field]: value,
+      },
+    }));
     setIsExerciseNoteSaved(false);
-    setIsUnsavedExerciseConfirmationOpen(false);
   };
 
   const requestNextExercise = () => {
@@ -527,6 +546,18 @@ export default function Home() {
     }
 
     setIsExerciseNoteSaved(true);
+    setExerciseDrafts((previous) => ({
+      ...previous,
+      [selectedExercise.question_text]: {
+        insights: groupInsights.trim(),
+        improvements: improvementIdeas.trim(),
+      },
+    }));
+    setSavedExerciseTopicTexts((previous) =>
+      previous.includes(selectedExercise.question_text)
+        ? previous
+        : [...previous, selectedExercise.question_text],
+    );
     setNoteStatus("グループ記録を保存しました。");
     setExerciseRecords((previous) => {
       const currentRecord = {
@@ -691,6 +722,8 @@ export default function Home() {
               setIsExerciseScreen(false);
               setSelectedExercise(null);
               setExerciseRecords([]);
+              setExerciseDrafts({});
+              setSavedExerciseTopicTexts([]);
             }}
             className="mt-8 w-full rounded-xl bg-amber-700 px-5 py-4 font-bold text-white hover:bg-amber-800"
           >
@@ -721,7 +754,7 @@ export default function Home() {
               value={groupInsights}
               onChange={(event) => {
                 setGroupInsights(event.target.value);
-                setIsExerciseNoteSaved(false);
+                updateExerciseDraft("insights", event.target.value);
               }}
               className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
               rows={5}
@@ -735,7 +768,7 @@ export default function Home() {
               value={improvementIdeas}
               onChange={(event) => {
                 setImprovementIdeas(event.target.value);
-                setIsExerciseNoteSaved(false);
+                updateExerciseDraft("improvements", event.target.value);
               }}
               className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
               rows={5}
@@ -762,6 +795,15 @@ export default function Home() {
                 className="rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
               >
                 次の項目を演習する
+              </button>
+            )}
+            {exerciseTopicIndex > 0 && (
+              <button
+                type="button"
+                onClick={goToPreviousExercise}
+                className="rounded-xl border border-emerald-700 px-5 py-4 font-bold text-emerald-700"
+              >
+                前の項目に戻る
               </button>
             )}
             <button
