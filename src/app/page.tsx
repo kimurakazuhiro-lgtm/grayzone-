@@ -1326,7 +1326,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setIsEndConfirmationOpen(true)}
-            className="mt-3 w-full rounded-xl border border-slate-300 px-5 py-4 font-bold text-slate-700"
+            className="mt-3 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
           >
             回答を終了する
           </button>
@@ -1355,7 +1355,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={endResponse}
-                  className="flex-1 rounded-xl bg-amber-700 px-4 py-3 font-bold text-white hover:bg-amber-800"
+                  className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800"
                 >
                   終了する
                 </button>
