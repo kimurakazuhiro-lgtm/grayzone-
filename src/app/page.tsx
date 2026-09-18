@@ -1200,7 +1200,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={endResponse}
-                  className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white"
+                  className="flex-1 rounded-xl bg-amber-700 px-4 py-3 font-bold text-white hover:bg-amber-800"
                 >
                   終了する
                 </button>
