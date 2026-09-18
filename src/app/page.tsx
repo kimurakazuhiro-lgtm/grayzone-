@@ -264,6 +264,7 @@ export default function Home() {
   const [exerciseTopicIndex, setExerciseTopicIndex] = useState(0);
   const [isExerciseScreen, setIsExerciseScreen] = useState(false);
   const [isExerciseReviewScreen, setIsExerciseReviewScreen] = useState(false);
+  const [isExerciseEndConfirmationOpen, setIsExerciseEndConfirmationOpen] = useState(false);
   const [exerciseRecords, setExerciseRecords] = useState<ExerciseRecord[]>([]);
   const [exerciseDrafts, setExerciseDrafts] = useState<
     Record<string, { insights: string; improvements: string }>
@@ -487,6 +488,7 @@ export default function Home() {
     if (!exerciseTopics[0]) return;
 
     setIsExerciseReviewScreen(false);
+    setIsExerciseEndConfirmationOpen(false);
     setExerciseLimitQuestion("");
     setIsExerciseScreen(true);
     moveToExercise(0);
@@ -717,18 +719,51 @@ export default function Home() {
 
           <button
             type="button"
-            onClick={() => {
-              setIsExerciseReviewScreen(false);
-              setIsExerciseScreen(false);
-              setSelectedExercise(null);
-              setExerciseRecords([]);
-              setExerciseDrafts({});
-              setSavedExerciseTopicTexts([]);
-            }}
-            className="mt-8 w-full rounded-xl bg-amber-700 px-5 py-4 font-bold text-white hover:bg-amber-800"
+            onClick={() => setIsExerciseEndConfirmationOpen(true)}
+            className="mt-8 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800"
           >
             終了する
           </button>
+
+          {isExerciseEndConfirmationOpen && (
+            <section
+              className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="exercise-end-confirmation-title"
+            >
+              <h2 id="exercise-end-confirmation-title" className="text-xl font-bold">
+                演習を終了しますか？
+              </h2>
+              <p className="mt-3 leading-7 text-slate-700">
+                終了すると、この画面から演習内容を確認できなくなります。よろしいですか？
+              </p>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setIsExerciseEndConfirmationOpen(false)}
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  戻る
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExerciseEndConfirmationOpen(false);
+                    setIsExerciseReviewScreen(false);
+                    setIsExerciseScreen(false);
+                    setSelectedExercise(null);
+                    setExerciseRecords([]);
+                    setExerciseDrafts({});
+                    setSavedExerciseTopicTexts([]);
+                  }}
+                  className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800"
+                >
+                  終了する
+                </button>
+              </div>
+            </section>
+          )}
         </section>
       </main>
     );
