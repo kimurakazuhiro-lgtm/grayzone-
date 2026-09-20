@@ -188,9 +188,17 @@ const allQuestions = [
   },
 ];
 
-const questions = allQuestions.filter((_, index) =>
-  [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42].includes(index),
-);
+const questionIndexesByPair: Record<number, number[]> = {
+  1: [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42],
+  2: [2, 3, 11, 12, 19, 20, 27, 28, 34, 35, 43, 44],
+};
+
+function getQuestionsForPair(questionPair: number) {
+  const indexes = questionIndexesByPair[questionPair] ?? questionIndexesByPair[1];
+  return allQuestions.filter((_, index) => indexes.includes(index));
+}
+
+const questions = getQuestionsForPair(1);
 
 const serviceTypes = ["居宅", "入所", "相談", "就労", "放デイ", "児発", "GH"];
 
@@ -300,9 +308,12 @@ export default function Home() {
     setShowFinalSuggestion(true);
   };
 
-  const startSurvey = () => {
-    // 毎回、大問1〜6の上から2問ずつを全員に同じ順番で表示します。
-    setSurveyQuestions([...questions]);
+  const startSurvey = async () => {
+    const { data } = await supabase.rpc("public_workshop_question_pair");
+    const questionPair = Number(data) === 2 ? 2 : 1;
+
+    // 毎回、選択した組を全員に同じ順番で表示します。
+    setSurveyQuestions(getQuestionsForPair(questionPair));
     setEditToken(crypto.randomUUID());
     setStarted(true);
   };

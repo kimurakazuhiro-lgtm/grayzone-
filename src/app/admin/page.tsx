@@ -9,6 +9,7 @@ type WorkshopSettings = {
   access_code: string;
   is_results_published: boolean;
   question_count: number;
+  question_pair: number;
 };
 
 export default function AdminPage() {
@@ -22,6 +23,7 @@ export default function AdminPage() {
   const [accessCode, setAccessCode] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [questionCount, setQuestionCount] = useState(12);
+  const [questionPair, setQuestionPair] = useState(1);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,6 +41,7 @@ export default function AdminPage() {
       setAccessCode(settings.access_code);
       setIsPublished(settings.is_results_published);
       setQuestionCount(12);
+      setQuestionPair(settings.question_pair === 2 ? 2 : 1);
     }
 
     setIsLoading(false);
@@ -93,6 +96,7 @@ export default function AdminPage() {
       p_access_code: accessCode,
       p_is_results_published: isPublished,
       p_question_count: questionCount,
+      p_question_pair: questionPair,
     });
 
     setMessage(error ? error.message : "公開設定を保存しました。");
@@ -255,10 +259,18 @@ export default function AdminPage() {
             </label>
 
             <div className="text-sm font-semibold text-slate-700">
-              1回の研修で出す質問
-              <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3 font-normal text-slate-700">
-                12問固定（大問1〜6の上から2問ずつを、全員に同じ順番で表示します）
-              </p>
+              1回の研修で出す質問（12問固定）
+              <select
+                value={questionPair}
+                onChange={(event) => setQuestionPair(Number(event.target.value))}
+                className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
+              >
+                <option value={1}>各大問の上から1・2番目</option>
+                <option value={2}>各大問の上から3・4番目</option>
+              </select>
+              <span className="mt-2 block font-normal text-slate-500">
+                保存後、次に回答を始める全員へ同じ12問を同じ順番で表示します。
+              </span>
             </div>
 
             <button
