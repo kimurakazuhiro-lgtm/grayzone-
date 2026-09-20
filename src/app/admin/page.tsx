@@ -11,6 +11,7 @@ type WorkshopSettings = {
   is_results_published: boolean;
   question_count: number;
   question_indexes: number[];
+  session_name: string;
 };
 
 const defaultQuestionIndexes = [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42];
@@ -27,6 +28,7 @@ export default function AdminPage() {
   const [isPublished, setIsPublished] = useState(false);
   const [questionCount, setQuestionCount] = useState(12);
   const [questionIndexes, setQuestionIndexes] = useState<number[]>(defaultQuestionIndexes);
+  const [sessionName, setSessionName] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,6 +51,7 @@ export default function AdminPage() {
           ? [...settings.question_indexes].sort((first, second) => first - second)
           : defaultQuestionIndexes,
       );
+      setSessionName(settings.session_name ?? "");
     }
 
     setIsLoading(false);
@@ -104,6 +107,7 @@ export default function AdminPage() {
       p_is_results_published: isPublished,
       p_question_count: questionCount,
       p_question_indexes: questionIndexes,
+      p_session_name: sessionName,
     });
 
     setMessage(error ? error.message : "公開設定を保存しました。");
@@ -264,6 +268,18 @@ export default function AdminPage() {
               <span className="mt-2 block font-normal text-slate-500">6文字以上の、推測されにくいコードにしてください。</span>
             </label>
 
+            <label className="text-sm font-semibold text-slate-700">
+              今回の研修名
+              <input
+                type="text"
+                value={sessionName}
+                onChange={(event) => setSessionName(event.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
+                placeholder="例：2026年10月研修"
+              />
+              <span className="mt-2 block font-normal text-slate-500">この名前ごとに結果が分かれて保存されます。</span>
+            </label>
+
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4">
               <input
                 type="checkbox"
@@ -304,7 +320,7 @@ export default function AdminPage() {
             <button
               type="button"
               onClick={saveSettings}
-              disabled={isSaving || accessCode.trim().length < 6 || questionIndexes.length !== 12}
+              disabled={isSaving || accessCode.trim().length < 6 || questionIndexes.length !== 12 || !sessionName.trim()}
               className="rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300"
             >
               {isSaving ? "保存中です..." : "公開設定を保存する"}

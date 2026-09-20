@@ -240,6 +240,7 @@ export default function Home() {
   const [surveyQuestions, setSurveyQuestions] = useState(() =>
     [...questions],
   );
+  const [workshopSessionName, setWorkshopSessionName] = useState("未設定");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [responseKeys, setResponseKeys] = useState<Record<number, string[]>>({});
@@ -305,7 +306,10 @@ export default function Home() {
   };
 
   const startSurvey = async () => {
-    const { data } = await supabase.rpc("public_workshop_question_indexes");
+    const [{ data }, { data: sessionName }] = await Promise.all([
+      supabase.rpc("public_workshop_question_indexes"),
+      supabase.rpc("public_workshop_session_name"),
+    ]);
     const configuredIndexes = Array.isArray(data)
       ? data.map(Number).filter((index) => Number.isInteger(index) && index >= 0 && index < allQuestions.length)
       : [];
@@ -313,6 +317,7 @@ export default function Home() {
 
     // 管理者が選択した12問を、全員に同じ順番で表示します。
     setSurveyQuestions(getQuestionsForIndexes(indexes));
+    setWorkshopSessionName(typeof sessionName === "string" && sessionName.trim() ? sessionName.trim() : "未設定");
     setEditToken(crypto.randomUUID());
     setStarted(true);
   };
@@ -335,6 +340,7 @@ export default function Home() {
       episodes,
       fieldSuggestion,
       editToken,
+      workshopSessionName,
     };
 
     try {
