@@ -1069,6 +1069,19 @@ export default function Home() {
                               <span className="mt-2 block text-sm font-semibold text-slate-700">
                                 {keyPercentage}%
                               </span>
+                              <span
+                                className="mt-2 block h-2 overflow-hidden rounded-full bg-white/80"
+                                role="progressbar"
+                                aria-label={`${key.name}の選択割合`}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={keyPercentage}
+                              >
+                                <span
+                                  className="block h-full rounded-full bg-emerald-700"
+                                  style={{ width: `${keyPercentage}%` }}
+                                />
+                              </span>
                               <span className="mt-1 block text-xs text-slate-600">選択 {keyCount}件</span>
                             </button>
                           );
