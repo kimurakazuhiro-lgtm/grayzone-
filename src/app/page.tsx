@@ -226,20 +226,6 @@ type ExerciseRecord = {
   improvements: string;
 };
 
-function selectRandomQuestions(count: number) {
-  const shuffledQuestions = [...questions];
-
-  for (let index = shuffledQuestions.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffledQuestions[index], shuffledQuestions[randomIndex]] = [
-      shuffledQuestions[randomIndex],
-      shuffledQuestions[index],
-    ];
-  }
-
-  return shuffledQuestions.slice(0, count);
-}
-
 export default function Home() {
   const [started, setStarted] = useState(false);
   const [serviceType, setServiceType] = useState("");
@@ -320,7 +306,8 @@ export default function Home() {
         : questionCount;
 
     setQuestionCount(count);
-    setSurveyQuestions(selectRandomQuestions(count));
+    // 同じ研修回では、全員に同じ質問を同じ順番で表示します。
+    setSurveyQuestions(questions.slice(0, count));
     setEditToken(crypto.randomUUID());
     setStarted(true);
   };
