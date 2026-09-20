@@ -10,7 +10,10 @@ returns table(access_code text, is_results_published boolean, question_count int
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_workshop_admin() then raise exception '管理者権限がありません。'; end if;
-  return query select access_code, is_results_published, question_count, question_indexes, session_name from public.workshop_settings where id = true;
+  return query
+  select settings.access_code, settings.is_results_published, settings.question_count, settings.question_indexes, settings.session_name
+  from public.workshop_settings as settings
+  where settings.id = true;
 end; $$;
 
 drop function if exists public.update_workshop_settings(text, boolean, integer, integer[]);
