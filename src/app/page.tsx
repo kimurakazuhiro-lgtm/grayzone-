@@ -217,6 +217,7 @@ type OptionalText = {
   question_text: string | null;
   input_type: string;
   content: string;
+  selected_keys?: string[] | null;
 };
 
 type ExerciseRecord = {
@@ -910,6 +911,10 @@ export default function Home() {
       const row = resultRows.find((resultRow) => resultRow.question_text === optionalText.question_text);
       if (!row) return [];
 
+      const selectedKeys = Array.isArray(optionalText.selected_keys)
+        ? optionalText.selected_keys.filter((keyName) => fiveKeys.some((key) => key.name === keyName))
+        : [];
+
       const initialKey = fiveKeys.reduce(
         (mostSelectedKey, key) =>
           Number(row.five_keys?.[key.name] ?? 0) > Number(row.five_keys?.[mostSelectedKey] ?? 0)
@@ -923,7 +928,8 @@ export default function Home() {
           id: `${optionalText.input_type}-${row.question_number}-${index}`,
           questionText: row.question_text,
           content: optionalText.content,
-          initialKey,
+          selectedKeys,
+          initialKey: selectedKeys[0] ?? initialKey,
         },
       ];
     });
@@ -997,6 +1003,18 @@ export default function Home() {
                               <p className="mt-1 text-sm font-bold leading-6 text-slate-800">
                                 {card.questionText}
                               </p>
+                              {card.selectedKeys.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                  {card.selectedKeys.map((keyName) => (
+                                    <span
+                                      key={keyName}
+                                      className="rounded-full bg-white/80 px-2 py-1 text-xs font-bold text-slate-700"
+                                    >
+                                      {keyName}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                               <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs font-bold text-slate-600">
                                 任意入力
                               </p>

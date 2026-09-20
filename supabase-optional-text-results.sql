@@ -1,12 +1,15 @@
--- 結果閲覧画面で、参加者の任意入力を表示するための設定です。
+-- 結果閲覧画面で、参加者の任意入力と選択した5Keysを表示するための設定です。
 -- Supabase の SQL Editor で 1 回だけ実行してください。
+
+drop function if exists public.get_workshop_optional_texts(text);
 
 create or replace function public.get_workshop_optional_texts(p_access_code text)
 returns table (
   category text,
   question_text text,
   input_type text,
-  content text
+  content text,
+  selected_keys jsonb
 )
 language plpgsql
 security definer
@@ -28,7 +31,8 @@ begin
     question.item ->> 'category' as category,
     question.item ->> 'text' as question_text,
     '関連するエピソード（任意）'::text as input_type,
-    episode.value as content
+    episode.value as content,
+    coalesce(response.answers -> 'responseKeys' -> episode.question_index, '[]'::jsonb) as selected_keys
   from public.responses as response
   cross join lateral jsonb_each_text(coalesce(response.answers -> 'episodes', '{}'::jsonb))
     as episode(question_index, value)
@@ -43,7 +47,8 @@ begin
     null::text as category,
     null::text as question_text,
     '最後に入力した気になった対応（任意）'::text as input_type,
-    response.answers ->> 'fieldSuggestion' as content
+    response.answers ->> 'fieldSuggestion' as content,
+    '[]'::jsonb as selected_keys
   from public.responses as response
   where btrim(coalesce(response.answers ->> 'fieldSuggestion', '')) <> '';
 end;
