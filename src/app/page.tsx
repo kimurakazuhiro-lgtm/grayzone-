@@ -198,27 +198,12 @@ const fiveKeys = [
   { name: "ワクワク", description: "これは何につながっているか？" },
 ];
 
-const fiveKeyBoardStyles: Record<string, { heading: string; card: string }> = {
-  安全: {
-    heading: "bg-sky-900 text-white",
-    card: "border-sky-200 bg-sky-50",
-  },
-  尊厳: {
-    heading: "bg-indigo-900 text-white",
-    card: "border-indigo-200 bg-indigo-50",
-  },
-  ルール: {
-    heading: "bg-violet-900 text-white",
-    card: "border-violet-200 bg-violet-50",
-  },
-  主体: {
-    heading: "bg-teal-800 text-white",
-    card: "border-teal-200 bg-teal-50",
-  },
-  ワクワク: {
-    heading: "bg-emerald-800 text-white",
-    card: "border-emerald-200 bg-emerald-50",
-  },
+const fiveKeyCardStyles: Record<string, string> = {
+  安全: "border-lime-300 bg-lime-100",
+  尊厳: "border-sky-300 bg-sky-100",
+  ルール: "border-violet-300 bg-violet-100",
+  主体: "border-amber-300 bg-amber-100",
+  ワクワク: "border-rose-300 bg-rose-100",
 };
 
 const defaultQuestionsPerSurvey = 10;
@@ -282,6 +267,11 @@ export default function Home() {
   const [resultsError, setResultsError] = useState("");
   const [resultsAccessCode, setResultsAccessCode] = useState("");
   const [grantedAccessCode, setGrantedAccessCode] = useState("");
+  const [fiveKeyCardOrders, setFiveKeyCardOrders] = useState<Record<string, string[]>>({});
+  const [selectedFiveKeyCard, setSelectedFiveKeyCard] = useState<{
+    questionId: string;
+    keyName: string;
+  } | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<ResultRow | null>(null);
   const [exerciseTopics, setExerciseTopics] = useState<ResultRow[]>([]);
   const [exerciseTopicIndex, setExerciseTopicIndex] = useState(0);
@@ -489,6 +479,37 @@ export default function Home() {
         });
       }, 0);
     }
+  };
+
+  const moveFiveKeyCard = (questionId: string, keyName: string) => {
+    if (!selectedFiveKeyCard) {
+      setSelectedFiveKeyCard({ questionId, keyName });
+      return;
+    }
+
+    if (selectedFiveKeyCard.questionId !== questionId) {
+      setSelectedFiveKeyCard({ questionId, keyName });
+      return;
+    }
+
+    if (selectedFiveKeyCard.keyName === keyName) {
+      setSelectedFiveKeyCard(null);
+      return;
+    }
+
+    setFiveKeyCardOrders((previous) => {
+      const currentOrder = previous[questionId] ?? fiveKeys.map((key) => key.name);
+      const nextOrder = currentOrder.filter((item) => item !== selectedFiveKeyCard.keyName);
+      const targetIndex = nextOrder.indexOf(keyName);
+
+      nextOrder.splice(targetIndex, 0, selectedFiveKeyCard.keyName);
+
+      return {
+        ...previous,
+        [questionId]: nextOrder,
+      };
+    });
+    setSelectedFiveKeyCard(null);
   };
 
   const moveToExercise = (index: number) => {
@@ -915,7 +936,7 @@ export default function Home() {
   if (isResultsRoute) {
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
-        <section className="mx-auto max-w-7xl rounded-3xl bg-white p-8 shadow-sm">
+        <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-sm">
           <p className="text-sm font-semibold text-emerald-700">グレーゾーンアンケート</p>
           <h1 className="mt-4 text-3xl font-bold">結果一覧</h1>
           <p className="mt-5 leading-7 text-slate-600">
@@ -928,63 +949,6 @@ export default function Home() {
 
           {!isLoadingResults && !resultsError && resultRows.length === 0 && (
             <p className="mt-8 text-slate-600">まだ集計できる回答がありません。</p>
-          )}
-
-          {!isLoadingResults && !resultsError && resultRows.length > 0 && (
-            <section className="mt-8 rounded-2xl border-2 border-slate-800 bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-emerald-700">5Keys 共有ボード</p>
-              <h2 className="mt-2 text-2xl font-bold">気になった質問を、5Keysごとに見比べる</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                「入る」と回答された際に選ばれた5Keysごとに、質問を付箋カードのように表示しています。
-              </p>
-
-              <div className="mt-5 grid gap-4 lg:grid-cols-5">
-                {fiveKeys.map((key) => {
-                  const boardRows = resultRows.filter(
-                    (row) => Number(row.five_keys?.[key.name] ?? 0) > 0,
-                  );
-                  const style = fiveKeyBoardStyles[key.name];
-
-                  return (
-                    <section key={key.name} className="rounded-xl border border-slate-200 bg-white p-3">
-                      <header className={`rounded-lg px-3 py-3 text-center ${style.heading}`}>
-                        <h3 className="font-bold">{key.name}</h3>
-                        <p className="mt-1 text-xs leading-5">{key.description}</p>
-                      </header>
-                      <div className="mt-3 space-y-3">
-                        {boardRows.length === 0 ? (
-                          <p className="rounded-lg border border-dashed border-slate-200 p-3 text-center text-sm text-slate-500">
-                            まだカードはありません
-                          </p>
-                        ) : (
-                          boardRows.map((row) => {
-                            const enteredCount = Number(row.entered_count);
-                            const keyCount = Number(row.five_keys?.[key.name] ?? 0);
-                            const keyPercentage =
-                              enteredCount === 0 ? 0 : Math.round((keyCount / enteredCount) * 100);
-
-                            return (
-                              <article
-                                key={`${key.name}-${row.question_number}-${row.question_text}`}
-                                className={`rounded-lg border p-3 shadow-sm ${style.card}`}
-                              >
-                                <p className="text-xs font-bold text-slate-500">質問 {row.question_number}</p>
-                                <p className="mt-2 text-sm font-semibold leading-6 text-slate-800">
-                                  {row.question_text}
-                                </p>
-                                <p className="mt-3 text-xs font-bold text-slate-600">
-                                  選択 {keyCount}件（{keyPercentage}%）
-                                </p>
-                              </article>
-                            );
-                          })
-                        )}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
-            </section>
           )}
 
           {!isLoadingResults && !resultsError && topExerciseRows.length > 0 && (
@@ -1047,6 +1011,11 @@ export default function Home() {
               );
               const enteredPercentage =
                 responseCount === 0 ? 0 : Math.round((enteredCount / responseCount) * 100);
+              const questionId = `${row.question_number}-${row.question_text}`;
+              const cardOrder = fiveKeyCardOrders[questionId] ?? fiveKeys.map((key) => key.name);
+              const orderedFiveKeys = cardOrder
+                .map((keyName) => fiveKeys.find((key) => key.name === keyName))
+                .filter((key): key is (typeof fiveKeys)[number] => Boolean(key));
 
               return (
                 <article
@@ -1074,21 +1043,38 @@ export default function Home() {
                     {enteredCount === 0 ? (
                       <p className="mt-2 text-sm text-slate-600">「入る」の回答がまだありません。</p>
                     ) : (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {fiveKeys.map((key) => {
+                      <>
+                        <p className="mt-2 text-xs leading-5 text-slate-600">
+                          カードをクリックして選び、移動先のカードをクリックすると順番を動かせます。
+                        </p>
+                        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                        {orderedFiveKeys.map((key) => {
                           const keyCount = Number(row.five_keys?.[key.name] ?? 0);
                           const keyPercentage = Math.round((keyCount / enteredCount) * 100);
+                          const isCardSelected =
+                            selectedFiveKeyCard?.questionId === questionId &&
+                            selectedFiveKeyCard.keyName === key.name;
 
                           return (
-                            <span
+                            <button
                               key={key.name}
-                              className="rounded-full bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"
+                              type="button"
+                              onClick={() => moveFiveKeyCard(questionId, key.name)}
+                              aria-pressed={isCardSelected}
+                              className={`min-h-24 rounded-xl border-2 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${fiveKeyCardStyles[key.name]} ${
+                                isCardSelected ? "ring-4 ring-slate-800 ring-offset-2" : ""
+                              }`}
                             >
-                              {key.name} {keyPercentage}%
-                            </span>
+                              <span className="block text-base font-bold text-slate-800">{key.name}</span>
+                              <span className="mt-2 block text-sm font-semibold text-slate-700">
+                                {keyPercentage}%
+                              </span>
+                              <span className="mt-1 block text-xs text-slate-600">選択 {keyCount}件</span>
+                            </button>
                           );
                         })}
-                      </div>
+                        </div>
+                      </>
                     )}
                   </div>
                   {questionOptionalTexts.length > 0 && (
