@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const allQuestions = [
+export const allQuestions = [
   {
     category: "利用者に対する言動について",
     text: "利用者さんにため口で話してしまうことがある。",
@@ -188,17 +188,13 @@ const allQuestions = [
   },
 ];
 
-const questionIndexesByPair: Record<number, number[]> = {
-  1: [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42],
-  2: [2, 3, 11, 12, 19, 20, 27, 28, 34, 35, 43, 44],
-};
+const defaultQuestionIndexes = [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42];
 
-function getQuestionsForPair(questionPair: number) {
-  const indexes = questionIndexesByPair[questionPair] ?? questionIndexesByPair[1];
+function getQuestionsForIndexes(indexes: number[]) {
   return allQuestions.filter((_, index) => indexes.includes(index));
 }
 
-const questions = getQuestionsForPair(1);
+const questions = getQuestionsForIndexes(defaultQuestionIndexes);
 
 const serviceTypes = ["居宅", "入所", "相談", "就労", "放デイ", "児発", "GH"];
 
@@ -309,11 +305,14 @@ export default function Home() {
   };
 
   const startSurvey = async () => {
-    const { data } = await supabase.rpc("public_workshop_question_pair");
-    const questionPair = Number(data) === 2 ? 2 : 1;
+    const { data } = await supabase.rpc("public_workshop_question_indexes");
+    const configuredIndexes = Array.isArray(data)
+      ? data.map(Number).filter((index) => Number.isInteger(index) && index >= 0 && index < allQuestions.length)
+      : [];
+    const indexes = new Set(configuredIndexes).size === 12 ? configuredIndexes : defaultQuestionIndexes;
 
-    // 毎回、選択した組を全員に同じ順番で表示します。
-    setSurveyQuestions(getQuestionsForPair(questionPair));
+    // 管理者が選択した12問を、全員に同じ順番で表示します。
+    setSurveyQuestions(getQuestionsForIndexes(indexes));
     setEditToken(crypto.randomUUID());
     setStarted(true);
   };

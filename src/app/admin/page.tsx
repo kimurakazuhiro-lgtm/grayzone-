@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { allQuestions } from "../page";
 import { supabase } from "@/lib/supabase";
 
 type WorkshopSettings = {
   access_code: string;
   is_results_published: boolean;
   question_count: number;
-  question_pair: number;
+  question_indexes: number[];
 };
+
+const defaultQuestionIndexes = [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42];
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -23,7 +26,7 @@ export default function AdminPage() {
   const [accessCode, setAccessCode] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [questionCount, setQuestionCount] = useState(12);
-  const [questionPair, setQuestionPair] = useState(1);
+  const [questionIndexes, setQuestionIndexes] = useState<number[]>(defaultQuestionIndexes);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,7 +44,11 @@ export default function AdminPage() {
       setAccessCode(settings.access_code);
       setIsPublished(settings.is_results_published);
       setQuestionCount(12);
-      setQuestionPair(settings.question_pair === 2 ? 2 : 1);
+      setQuestionIndexes(
+        Array.isArray(settings.question_indexes) && new Set(settings.question_indexes).size === 12
+          ? [...settings.question_indexes].sort((first, second) => first - second)
+          : defaultQuestionIndexes,
+      );
     }
 
     setIsLoading(false);
@@ -96,11 +103,25 @@ export default function AdminPage() {
       p_access_code: accessCode,
       p_is_results_published: isPublished,
       p_question_count: questionCount,
-      p_question_pair: questionPair,
+      p_question_indexes: questionIndexes,
     });
 
     setMessage(error ? error.message : "公開設定を保存しました。");
     setIsSaving(false);
+  };
+
+  const toggleQuestion = (index: number) => {
+    if (questionIndexes.includes(index)) {
+      setQuestionIndexes((current) => current.filter((currentIndex) => currentIndex !== index));
+      return;
+    }
+
+    if (questionIndexes.length >= 12) {
+      setMessage("質問は12問まで選択できます。選択済みの質問を1つ外してください。");
+      return;
+    }
+
+    setQuestionIndexes((current) => [...current, index].sort((first, second) => first - second));
   };
 
   const signOut = async () => {
@@ -259,24 +280,31 @@ export default function AdminPage() {
             </label>
 
             <div className="text-sm font-semibold text-slate-700">
-              1回の研修で出す質問（12問固定）
-              <select
-                value={questionPair}
-                onChange={(event) => setQuestionPair(Number(event.target.value))}
-                className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
-              >
-                <option value={1}>各大問の上から1・2番目</option>
-                <option value={2}>各大問の上から3・4番目</option>
-              </select>
-              <span className="mt-2 block font-normal text-slate-500">
-                保存後、次に回答を始める全員へ同じ12問を同じ順番で表示します。
-              </span>
+              今回出す質問（{questionIndexes.length} / 12問）
+              <p className="mt-2 font-normal text-slate-500">
+                質問を12問選んでください。保存後、次に回答を始める全員へ同じ順番で表示します。
+              </p>
+              <div className="mt-3 max-h-[32rem] space-y-4 overflow-y-auto rounded-xl border border-slate-200 p-3">
+                {Array.from(new Set(allQuestions.map((question) => question.category))).map((category) => (
+                  <fieldset key={category} className="border-b border-slate-100 pb-3 last:border-0">
+                    <legend className="font-bold text-emerald-700">{category}</legend>
+                    <div className="mt-2 grid gap-2">
+                      {allQuestions.map((question, index) => question.category === category && (
+                        <label key={question.text} className="flex cursor-pointer items-start gap-2 rounded-lg p-2 hover:bg-emerald-50">
+                          <input type="checkbox" checked={questionIndexes.includes(index)} onChange={() => toggleQuestion(index)} className="mt-1 h-4 w-4" />
+                          <span className="font-normal leading-6">{question.text}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
             </div>
 
             <button
               type="button"
               onClick={saveSettings}
-              disabled={isSaving || accessCode.trim().length < 6}
+              disabled={isSaving || accessCode.trim().length < 6 || questionIndexes.length !== 12}
               className="rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300"
             >
               {isSaving ? "保存中です..." : "公開設定を保存する"}
