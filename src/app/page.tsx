@@ -891,24 +891,24 @@ export default function Home() {
     const cardsByQuestion = new Map<
       string,
       { id: string; questionText: string; contents: string[]; initialKey: string }
-    >();
+    >(
+      resultRows.map((row) => [
+        row.question_text,
+        {
+          id: `question-${row.question_number}`,
+          questionText: row.question_text,
+          contents: [],
+          initialKey: "未整理",
+        },
+      ]),
+    );
 
-    optionalTexts.forEach((optionalText, index) => {
+    optionalTexts.forEach((optionalText) => {
       if (!optionalText.question_text) return;
 
-      const row = resultRows.find((resultRow) => resultRow.question_text === optionalText.question_text);
-      if (!row) return;
-
-      const existingCard = cardsByQuestion.get(row.question_text);
+      const existingCard = cardsByQuestion.get(optionalText.question_text);
       if (existingCard) {
         existingCard.contents.push(optionalText.content);
-      } else {
-        cardsByQuestion.set(row.question_text, {
-          id: `${optionalText.input_type}-${row.question_number}-${index}`,
-          questionText: row.question_text,
-          contents: [optionalText.content],
-          initialKey: "未整理",
-        });
       }
     });
 
@@ -926,16 +926,22 @@ export default function Home() {
       >
         <p className="text-xs font-bold text-slate-500">質問</p>
         <p className="mt-1 text-sm font-bold leading-6 text-slate-800">{card.questionText}</p>
-        <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs font-bold text-slate-600">
-          任意入力
-        </p>
-        <div className="mt-1 space-y-2">
-          {card.contents.map((content, contentIndex) => (
-            <p key={contentIndex} className="whitespace-pre-wrap text-sm leading-6 text-slate-800">
-              {content}
+        {card.contents.length > 0 ? (
+          <>
+            <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs font-bold text-slate-600">
+              任意入力
             </p>
-          ))}
-        </div>
+            <div className="mt-1 space-y-2">
+              {card.contents.map((content, contentIndex) => (
+                <p key={contentIndex} className="whitespace-pre-wrap text-sm leading-6 text-slate-800">
+                  {content}
+                </p>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs text-slate-500">任意入力はありません</p>
+        )}
       </button>
     );
 
