@@ -904,21 +904,31 @@ export default function Home() {
   }
 
   if (isResultsRoute) {
-    const boardCards = optionalTexts.flatMap((optionalText, index) => {
-      if (!optionalText.question_text) return [];
+    const cardsByQuestion = new Map<
+      string,
+      { id: string; questionText: string; contents: string[]; initialKey: string }
+    >();
+
+    optionalTexts.forEach((optionalText, index) => {
+      if (!optionalText.question_text) return;
 
       const row = resultRows.find((resultRow) => resultRow.question_text === optionalText.question_text);
-      if (!row) return [];
+      if (!row) return;
 
-      return [
-        {
+      const existingCard = cardsByQuestion.get(row.question_text);
+      if (existingCard) {
+        existingCard.contents.push(optionalText.content);
+      } else {
+        cardsByQuestion.set(row.question_text, {
           id: `${optionalText.input_type}-${row.question_number}-${index}`,
           questionText: row.question_text,
-          content: optionalText.content,
+          contents: [optionalText.content],
           initialKey: "未整理",
-        },
-      ];
+        });
+      }
     });
+
+    const boardCards = Array.from(cardsByQuestion.values());
 
     const renderBoardCard = (card: (typeof boardCards)[number], index: number) => (
       <button
@@ -935,7 +945,13 @@ export default function Home() {
         <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs font-bold text-slate-600">
           任意入力
         </p>
-        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-800">{card.content}</p>
+        <div className="mt-1 space-y-2">
+          {card.contents.map((content, contentIndex) => (
+            <p key={contentIndex} className="whitespace-pre-wrap text-sm leading-6 text-slate-800">
+              {content}
+            </p>
+          ))}
+        </div>
       </button>
     );
 
