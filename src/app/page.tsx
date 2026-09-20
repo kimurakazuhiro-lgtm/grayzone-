@@ -198,6 +198,29 @@ const fiveKeys = [
   { name: "ワクワク", description: "これは何につながっているか？" },
 ];
 
+const fiveKeyBoardStyles: Record<string, { heading: string; card: string }> = {
+  安全: {
+    heading: "bg-sky-900 text-white",
+    card: "border-sky-200 bg-sky-50",
+  },
+  尊厳: {
+    heading: "bg-indigo-900 text-white",
+    card: "border-indigo-200 bg-indigo-50",
+  },
+  ルール: {
+    heading: "bg-violet-900 text-white",
+    card: "border-violet-200 bg-violet-50",
+  },
+  主体: {
+    heading: "bg-teal-800 text-white",
+    card: "border-teal-200 bg-teal-50",
+  },
+  ワクワク: {
+    heading: "bg-emerald-800 text-white",
+    card: "border-emerald-200 bg-emerald-50",
+  },
+};
+
 const defaultQuestionsPerSurvey = 10;
 
 type ResultRow = {
@@ -892,7 +915,7 @@ export default function Home() {
   if (isResultsRoute) {
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
-        <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-sm">
+        <section className="mx-auto max-w-7xl rounded-3xl bg-white p-8 shadow-sm">
           <p className="text-sm font-semibold text-emerald-700">グレーゾーンアンケート</p>
           <h1 className="mt-4 text-3xl font-bold">結果一覧</h1>
           <p className="mt-5 leading-7 text-slate-600">
@@ -905,6 +928,63 @@ export default function Home() {
 
           {!isLoadingResults && !resultsError && resultRows.length === 0 && (
             <p className="mt-8 text-slate-600">まだ集計できる回答がありません。</p>
+          )}
+
+          {!isLoadingResults && !resultsError && resultRows.length > 0 && (
+            <section className="mt-8 rounded-2xl border-2 border-slate-800 bg-slate-50 p-5">
+              <p className="text-sm font-semibold text-emerald-700">5Keys 共有ボード</p>
+              <h2 className="mt-2 text-2xl font-bold">気になった質問を、5Keysごとに見比べる</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                「入る」と回答された際に選ばれた5Keysごとに、質問を付箋カードのように表示しています。
+              </p>
+
+              <div className="mt-5 grid gap-4 lg:grid-cols-5">
+                {fiveKeys.map((key) => {
+                  const boardRows = resultRows.filter(
+                    (row) => Number(row.five_keys?.[key.name] ?? 0) > 0,
+                  );
+                  const style = fiveKeyBoardStyles[key.name];
+
+                  return (
+                    <section key={key.name} className="rounded-xl border border-slate-200 bg-white p-3">
+                      <header className={`rounded-lg px-3 py-3 text-center ${style.heading}`}>
+                        <h3 className="font-bold">{key.name}</h3>
+                        <p className="mt-1 text-xs leading-5">{key.description}</p>
+                      </header>
+                      <div className="mt-3 space-y-3">
+                        {boardRows.length === 0 ? (
+                          <p className="rounded-lg border border-dashed border-slate-200 p-3 text-center text-sm text-slate-500">
+                            まだカードはありません
+                          </p>
+                        ) : (
+                          boardRows.map((row) => {
+                            const enteredCount = Number(row.entered_count);
+                            const keyCount = Number(row.five_keys?.[key.name] ?? 0);
+                            const keyPercentage =
+                              enteredCount === 0 ? 0 : Math.round((keyCount / enteredCount) * 100);
+
+                            return (
+                              <article
+                                key={`${key.name}-${row.question_number}-${row.question_text}`}
+                                className={`rounded-lg border p-3 shadow-sm ${style.card}`}
+                              >
+                                <p className="text-xs font-bold text-slate-500">質問 {row.question_number}</p>
+                                <p className="mt-2 text-sm font-semibold leading-6 text-slate-800">
+                                  {row.question_text}
+                                </p>
+                                <p className="mt-3 text-xs font-bold text-slate-600">
+                                  選択 {keyCount}件（{keyPercentage}%）
+                                </p>
+                              </article>
+                            );
+                          })
+                        )}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </section>
           )}
 
           {!isLoadingResults && !resultsError && topExerciseRows.length > 0 && (
