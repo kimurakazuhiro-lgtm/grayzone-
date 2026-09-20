@@ -1,4 +1,7 @@
 -- 研修回ごとに回答と結果を分ける設定です。SQL Editorで1回実行してください。
+alter table public.workshop_settings
+add column if not exists question_indexes integer[] not null default array[0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42];
+
 alter table public.workshop_settings add column if not exists session_name text not null default '未設定';
 
 drop function if exists public.admin_workshop_settings();
