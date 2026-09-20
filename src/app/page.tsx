@@ -217,7 +217,6 @@ type OptionalText = {
   question_text: string | null;
   input_type: string;
   content: string;
-  selected_keys?: string[] | null;
 };
 
 type ExerciseRecord = {
@@ -911,28 +910,34 @@ export default function Home() {
       const row = resultRows.find((resultRow) => resultRow.question_text === optionalText.question_text);
       if (!row) return [];
 
-      const selectedKeys = Array.isArray(optionalText.selected_keys)
-        ? optionalText.selected_keys.filter((keyName) => fiveKeys.some((key) => key.name === keyName))
-        : [];
-
-      const initialKey = fiveKeys.reduce(
-        (mostSelectedKey, key) =>
-          Number(row.five_keys?.[key.name] ?? 0) > Number(row.five_keys?.[mostSelectedKey] ?? 0)
-            ? key.name
-            : mostSelectedKey,
-        fiveKeys[0].name,
-      );
-
       return [
         {
           id: `${optionalText.input_type}-${row.question_number}-${index}`,
           questionText: row.question_text,
           content: optionalText.content,
-          selectedKeys,
-          initialKey: selectedKeys[0] ?? initialKey,
+          initialKey: "未整理",
         },
       ];
     });
+
+    const renderBoardCard = (card: (typeof boardCards)[number], index: number) => (
+      <button
+        key={card.id}
+        type="button"
+        onClick={() => setSelectedBoardCardId((previous) => (previous === card.id ? null : card.id))}
+        aria-pressed={selectedBoardCardId === card.id}
+        className={`w-full rounded-lg p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+          stickyCardStyles[index % stickyCardStyles.length]
+        } ${selectedBoardCardId === card.id ? "ring-4 ring-slate-800 ring-offset-2" : ""}`}
+      >
+        <p className="text-xs font-bold text-slate-500">質問</p>
+        <p className="mt-1 text-sm font-bold leading-6 text-slate-800">{card.questionText}</p>
+        <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs font-bold text-slate-600">
+          任意入力
+        </p>
+        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-800">{card.content}</p>
+      </button>
+    );
 
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
@@ -956,8 +961,20 @@ export default function Home() {
               <p className="text-sm font-semibold text-emerald-700">5Keys 共有ボード</p>
               <h2 className="mt-2 text-2xl font-bold">任意入力を、5Keysごとに貼り付ける</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                カードには質問内容と任意入力を表示しています。カードを選び、移動先の列にある「ここへ移動」を押すと配置を変えられます。
+                回答者が選んだ5Keysは表示しません。話し合いの中で、質問と任意入力を読み、カードを5Keysの列へ手動で整理します。
               </p>
+
+              <section className="mt-5 rounded-xl border border-dashed border-slate-400 bg-white p-4">
+                <h3 className="font-bold text-slate-800">未整理のカード</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  カードをクリックして選んだ後、下の5Keys列にある「ここへ移動」を押してください。
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {boardCards
+                    .filter((card) => (boardCardLocations[card.id] ?? card.initialKey) === "未整理")
+                    .map(renderBoardCard)}
+                </div>
+              </section>
 
               <div className="mt-5 grid gap-4 lg:grid-cols-5">
                 {fiveKeys.map((key) => {
@@ -985,44 +1002,7 @@ export default function Home() {
                             カードはありません
                           </p>
                         ) : (
-                          cardsForKey.map((card, index) => (
-                            <button
-                              key={card.id}
-                              type="button"
-                              onClick={() =>
-                                setSelectedBoardCardId((previous) =>
-                                  previous === card.id ? null : card.id,
-                                )
-                              }
-                              aria-pressed={selectedBoardCardId === card.id}
-                              className={`w-full rounded-lg p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                                stickyCardStyles[index % stickyCardStyles.length]
-                              } ${selectedBoardCardId === card.id ? "ring-4 ring-slate-800 ring-offset-2" : ""}`}
-                            >
-                              <p className="text-xs font-bold text-slate-500">質問</p>
-                              <p className="mt-1 text-sm font-bold leading-6 text-slate-800">
-                                {card.questionText}
-                              </p>
-                              {card.selectedKeys.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-1.5">
-                                  {card.selectedKeys.map((keyName) => (
-                                    <span
-                                      key={keyName}
-                                      className="rounded-full bg-white/80 px-2 py-1 text-xs font-bold text-slate-700"
-                                    >
-                                      {keyName}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                              <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs font-bold text-slate-600">
-                                任意入力
-                              </p>
-                              <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-800">
-                                {card.content}
-                              </p>
-                            </button>
-                          ))
+                          cardsForKey.map(renderBoardCard)
                         )}
                       </div>
                     </section>
