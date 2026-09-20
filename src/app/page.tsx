@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const questions = [
+const allQuestions = [
   {
     category: "利用者に対する言動について",
     text: "利用者さんにため口で話してしまうことがある。",
@@ -188,6 +188,10 @@ const questions = [
   },
 ];
 
+const questions = allQuestions.filter((_, index) =>
+  [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42].includes(index),
+);
+
 const serviceTypes = ["居宅", "入所", "相談", "就労", "放デイ", "児発", "GH"];
 
 const fiveKeys = [
@@ -200,7 +204,7 @@ const fiveKeys = [
 
 const stickyCardStyles = ["bg-amber-100", "bg-sky-100", "bg-lime-100", "bg-rose-100", "bg-violet-100"];
 
-const defaultQuestionsPerSurvey = 10;
+const defaultQuestionsPerSurvey = questions.length;
 
 type ResultRow = {
   question_number: number;
@@ -229,9 +233,8 @@ type ExerciseRecord = {
 export default function Home() {
   const [started, setStarted] = useState(false);
   const [serviceType, setServiceType] = useState("");
-  const [questionCount, setQuestionCount] = useState(defaultQuestionsPerSurvey);
   const [surveyQuestions, setSurveyQuestions] = useState(() =>
-    questions.slice(0, defaultQuestionsPerSurvey),
+    [...questions],
   );
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -297,17 +300,9 @@ export default function Home() {
     setShowFinalSuggestion(true);
   };
 
-  const startSurvey = async () => {
-    const { data } = await supabase.rpc("public_question_count");
-    const latestQuestionCount = Number(data);
-    const count =
-      Number.isInteger(latestQuestionCount) && latestQuestionCount >= 8 && latestQuestionCount <= 12
-        ? latestQuestionCount
-        : questionCount;
-
-    setQuestionCount(count);
-    // 同じ研修回では、全員に同じ質問を同じ順番で表示します。
-    setSurveyQuestions(questions.slice(0, count));
+  const startSurvey = () => {
+    // 毎回、大問1〜6の上から2問ずつを全員に同じ順番で表示します。
+    setSurveyQuestions([...questions]);
     setEditToken(crypto.randomUUID());
     setStarted(true);
   };
@@ -386,20 +381,6 @@ export default function Home() {
     setFieldSuggestion("");
     setEditToken("");
   };
-
-  useEffect(() => {
-    if (isResultsRoute) return;
-
-    const loadQuestionCount = async () => {
-      const { data } = await supabase.rpc("public_question_count");
-
-      if (typeof data === "number" && data >= 8 && data <= 12) {
-        setQuestionCount(data);
-      }
-    };
-
-    void loadQuestionCount();
-  }, [isResultsRoute]);
 
   const loadResultsWithCode = async () => {
     const accessCode = resultsAccessCode.trim();

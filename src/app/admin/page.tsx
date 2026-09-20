@@ -21,7 +21,7 @@ export default function AdminPage() {
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [accessCode, setAccessCode] = useState("");
   const [isPublished, setIsPublished] = useState(false);
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(12);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,7 +38,7 @@ export default function AdminPage() {
       const settings = data[0] as WorkshopSettings;
       setAccessCode(settings.access_code);
       setIsPublished(settings.is_results_published);
-      setQuestionCount(settings.question_count);
+      setQuestionCount(12);
     }
 
     setIsLoading(false);
@@ -254,21 +254,12 @@ export default function AdminPage() {
               </span>
             </label>
 
-            <label className="text-sm font-semibold text-slate-700">
-              1回の研修で出す質問数
-              <select
-                value={questionCount}
-                onChange={(event) => setQuestionCount(Number(event.target.value))}
-                className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"
-              >
-                {[8, 9, 10, 11, 12].map((count) => (
-                  <option key={count} value={count}>{count}問</option>
-                ))}
-              </select>
-              <span className="mt-2 block font-normal text-slate-500">
-                次に回答を始める参加者から、この質問数がランダムに出題されます。
-              </span>
-            </label>
+            <div className="text-sm font-semibold text-slate-700">
+              1回の研修で出す質問
+              <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3 font-normal text-slate-700">
+                12問固定（大問1〜6の上から2問ずつを、全員に同じ順番で表示します）
+              </p>
+            </div>
 
             <button
               type="button"
