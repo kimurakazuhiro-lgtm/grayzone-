@@ -262,6 +262,8 @@ export default function Home() {
   const [resultsError, setResultsError] = useState("");
   const [resultsAccessCode, setResultsAccessCode] = useState("");
   const [grantedAccessCode, setGrantedAccessCode] = useState("");
+  const [resultSessionNames, setResultSessionNames] = useState<string[]>([]);
+  const [selectedResultSessionName, setSelectedResultSessionName] = useState("");
   const [boardCardLocations, setBoardCardLocations] = useState<Record<string, string>>({});
   const [selectedBoardCardId, setSelectedBoardCardId] = useState<string | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<ResultRow | null>(null);
@@ -405,7 +407,7 @@ export default function Home() {
     setEditToken("");
   };
 
-  const loadResultsWithCode = async () => {
+  const loadResultsWithCode = async (requestedSessionName?: string) => {
     const accessCode = resultsAccessCode.trim();
 
     if (!accessCode) {
@@ -416,20 +418,58 @@ export default function Home() {
     setIsLoadingResults(true);
     setResultsError("");
 
-    const { data, error } = await supabase.rpc("get_workshop_results", {
+    const { data: sessionData, error: sessionError } = await supabase.rpc("get_workshop_result_sessions", {
       p_access_code: accessCode,
     });
 
-    if (error) {
+    if (sessionError) {
       setResultsError("閲覧コードが違うか、結果はまだ公開されていません。");
       setResultRows([]);
       setOptionalTexts([]);
       setGrantedAccessCode("");
+      setResultSessionNames([]);
+      setSelectedResultSessionName("");
     } else {
-      setGrantedAccessCode(accessCode);
-      setResultRows((data ?? []) as ResultRow[]);
-      const { data: optionalTextData } = await supabase.rpc("get_workshop_optional_texts", {
+      const sessionNames = ((sessionData ?? []) as { session_name: string | null }[])
+        .map((session) => String(session.session_name ?? "").trim())
+        .filter(Boolean);
+      const targetSessionName = (requestedSessionName ?? selectedResultSessionName).trim() || sessionNames[0];
+
+      if (!targetSessionName) {
+        setResultsError("表示できる研修結果がありません。");
+        setResultRows([]);
+        setOptionalTexts([]);
+        setGrantedAccessCode("");
+        setResultSessionNames([]);
+        setSelectedResultSessionName("");
+        setIsLoadingResults(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("get_workshop_results_for_session", {
         p_access_code: accessCode,
+        p_session_name: targetSessionName,
+      });
+
+      if (error) {
+        setResultsError("研修結果を読み込めませんでした。時間をおいて再度お試しください。");
+        setResultRows([]);
+        setOptionalTexts([]);
+        setGrantedAccessCode("");
+        setIsLoadingResults(false);
+        return;
+      }
+
+      setGrantedAccessCode(accessCode);
+      setResultSessionNames(sessionNames);
+      setSelectedResultSessionName(targetSessionName);
+      setResultRows((data ?? []) as ResultRow[]);
+      setBoardCardLocations({});
+      setSelectedBoardCardId(null);
+      setExerciseTopics([]);
+      const { data: optionalTextData } = await supabase.rpc("get_workshop_optional_texts_for_session", {
+        p_access_code: accessCode,
+        p_session_name: targetSessionName,
       });
       setOptionalTexts((optionalTextData ?? []) as OptionalText[]);
     }
@@ -671,7 +711,7 @@ export default function Home() {
 
           <button
             type="button"
-            onClick={loadResultsWithCode}
+            onClick={() => void loadResultsWithCode()}
             disabled={isLoadingResults}
             className="mt-5 w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300"
           >
@@ -964,6 +1004,27 @@ export default function Home() {
           <p className="mt-5 leading-7 text-slate-600">
             質問ごとの回答傾向と、回答者が任意で入力した内容を表示しています。
           </p>
+
+          <section className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <label className="block text-sm font-bold text-slate-700">
+              表示する研修結果
+              <select
+                value={selectedResultSessionName}
+                onChange={(event) => void loadResultsWithCode(event.target.value)}
+                disabled={isLoadingResults}
+                className="mt-2 w-full rounded-lg border border-emerald-200 bg-white p-3 font-normal text-slate-800 disabled:bg-slate-100"
+              >
+                {resultSessionNames.map((sessionName) => (
+                  <option key={sessionName} value={sessionName}>
+                    {sessionName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              過去の研修名を選ぶと、その回の結果だけを表示します。
+            </p>
+          </section>
 
           {isLoadingResults && <p className="mt-8 text-slate-600">読み込み中です。</p>}
 
