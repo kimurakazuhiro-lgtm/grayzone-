@@ -206,7 +206,14 @@ const fiveKeys = [
   { name: "ワクワク", description: "これは何につながっているか？" },
 ];
 
-const stickyCardStyles = ["bg-amber-100", "bg-sky-100", "bg-lime-100", "bg-rose-100", "bg-violet-100"];
+const boardCardStyleByKey: Record<string, string> = {
+  未整理: "bg-amber-100",
+  安全: "bg-sky-100",
+  尊厳: "bg-violet-100",
+  ルール: "bg-rose-100",
+  主体: "bg-lime-100",
+  ワクワク: "bg-orange-100",
+};
 
 const defaultQuestionsPerSurvey = questions.length;
 
@@ -914,14 +921,17 @@ export default function Home() {
 
     const boardCards = Array.from(cardsByQuestion.values());
 
-    const renderBoardCard = (card: (typeof boardCards)[number], index: number) => (
-      <button
+    const renderBoardCard = (card: (typeof boardCards)[number]) => {
+      const cardLocation = boardCardLocations[card.id] ?? card.initialKey;
+
+      return (
+        <button
         key={card.id}
         type="button"
         onClick={() => setSelectedBoardCardId((previous) => (previous === card.id ? null : card.id))}
         aria-pressed={selectedBoardCardId === card.id}
         className={`w-full rounded-lg p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-          stickyCardStyles[index % stickyCardStyles.length]
+          boardCardStyleByKey[cardLocation] ?? boardCardStyleByKey.未整理
         } ${selectedBoardCardId === card.id ? "ring-4 ring-slate-800 ring-offset-2" : ""}`}
       >
         <p className="text-xs font-bold text-slate-500">質問</p>
@@ -942,8 +952,9 @@ export default function Home() {
         ) : (
           <p className="mt-3 border-t border-slate-400/30 pt-3 text-xs text-slate-500">任意入力はありません</p>
         )}
-      </button>
-    );
+        </button>
+      );
+    };
 
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-12 text-slate-800">
