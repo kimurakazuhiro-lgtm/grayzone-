@@ -587,25 +587,23 @@ export default function Home() {
       workshopSessionName,
     };
 
-    try {
-      const response = await Promise.race([
-        isEditingSubmittedResponse
-          ? supabase.rpc("update_workshop_response", {
-              p_edit_token: editToken,
-              p_answers: responseData,
-            })
-          : supabase.from("responses").insert({ answers: responseData }),
-        new Promise<null>((resolve) => {
-          window.setTimeout(() => resolve(null), 15000);
-        }),
-      ]);
+    let slowSubmissionTimer: number | undefined;
 
-      if (response === null) {
+    try {
+      // 通信が15秒を超えても、保存処理そのものは中断しません。
+      // 途中で失敗扱いにすると、実際には保存済みなのに再送して重複するおそれがあります。
+      slowSubmissionTimer = window.setTimeout(() => {
         setSubmitMessage(
-          "保存に時間がかかっています。通信を確認して、もう一度「回答を送信する」を押してください。",
+          "保存に時間がかかっています。画面を閉じず、そのままお待ちください。",
         );
-        return;
-      }
+      }, 15000);
+
+      const response = isEditingSubmittedResponse
+        ? await supabase.rpc("update_workshop_response", {
+            p_edit_token: editToken,
+            p_answers: responseData,
+          })
+        : await supabase.from("responses").insert({ answers: responseData });
 
       if (response.error) {
         setSubmitMessage("回答を保存できませんでした。通信を確認して、もう一度お試しください。");
@@ -621,6 +619,9 @@ export default function Home() {
         "回答の送信中に通信エラーが発生しました。通信を確認して、もう一度お試しください。",
       );
     } finally {
+      if (slowSubmissionTimer !== undefined) {
+        window.clearTimeout(slowSubmissionTimer);
+      }
       setIsSubmitting(false);
     }
   };
