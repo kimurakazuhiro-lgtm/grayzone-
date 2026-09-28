@@ -16,9 +16,15 @@ type WorkshopSettings = {
 };
 
 const defaultQuestionIndexes = Array.from({ length: 10 }, (_, index) => index);
-const defaultServiceQuestionIndexes = Object.fromEntries(
-  serviceTypes.map((service) => [service, Array.from({ length: 10 }, (_, index) => index)]),
-) as Record<string, number[]>;
+const defaultServiceQuestionIndexes: Record<string, number[]> = {
+  居宅: Array.from({ length: 10 }, (_, index) => index),
+  相談: Array.from({ length: 10 }, (_, index) => index),
+  放デイ: Array.from({ length: 10 }, (_, index) => index),
+  児発: Array.from({ length: 10 }, (_, index) => index),
+  GH: Array.from({ length: 10 }, (_, index) => index),
+  入所: [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
+  就労: [0, 1, 2, 3, 10, 11, 12, 20, 21, 22],
+};
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
