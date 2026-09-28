@@ -1,6 +1,6 @@
 -- 研修回ごとに回答と結果を分ける設定です。SQL Editorで1回実行してください。
 alter table public.workshop_settings
-add column if not exists question_indexes integer[] not null default array[0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42];
+add column if not exists question_indexes integer[] not null default array[0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 alter table public.workshop_settings add column if not exists session_name text not null default '未設定';
 
@@ -24,8 +24,8 @@ begin
   if not public.is_workshop_admin() then raise exception '管理者権限がありません。'; end if;
   if char_length(trim(p_access_code)) < 6 then raise exception '閲覧コードは6文字以上にしてください。'; end if;
   if char_length(trim(p_session_name)) < 1 then raise exception '今回の研修名を入力してください。'; end if;
-  if coalesce(array_length(p_question_indexes, 1), 0) <> 12 then raise exception '質問は12問選択してください。'; end if;
-  update public.workshop_settings set access_code=trim(p_access_code), is_results_published=p_is_results_published, question_count=12, question_indexes=p_question_indexes, session_name=trim(p_session_name), updated_at=now() where id=true;
+  if coalesce(array_length(p_question_indexes, 1), 0) <> 10 then raise exception '質問は10問に設定してください。'; end if;
+  update public.workshop_settings set access_code=trim(p_access_code), is_results_published=p_is_results_published, question_count=10, question_indexes=p_question_indexes, session_name=trim(p_session_name), updated_at=now() where id=true;
 end; $$;
 
 create or replace function public.public_workshop_session_name()

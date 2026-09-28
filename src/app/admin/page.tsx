@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { allQuestions } from "../page";
+import { serviceQuestionSets } from "../page";
 import { supabase } from "@/lib/supabase";
 
 type WorkshopSettings = {
@@ -14,7 +14,7 @@ type WorkshopSettings = {
   session_name: string;
 };
 
-const defaultQuestionIndexes = [0, 1, 9, 10, 17, 18, 25, 26, 32, 33, 41, 42];
+const defaultQuestionIndexes = Array.from({ length: 10 }, (_, index) => index);
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -26,7 +26,7 @@ export default function AdminPage() {
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [accessCode, setAccessCode] = useState("");
   const [isPublished, setIsPublished] = useState(false);
-  const [questionCount, setQuestionCount] = useState(12);
+  const [questionCount, setQuestionCount] = useState(10);
   const [questionIndexes, setQuestionIndexes] = useState<number[]>(defaultQuestionIndexes);
   const [sessionName, setSessionName] = useState("");
   const [message, setMessage] = useState("");
@@ -45,9 +45,9 @@ export default function AdminPage() {
       const settings = data[0] as WorkshopSettings;
       setAccessCode(settings.access_code);
       setIsPublished(settings.is_results_published);
-      setQuestionCount(12);
+      setQuestionCount(10);
       setQuestionIndexes(
-        Array.isArray(settings.question_indexes) && new Set(settings.question_indexes).size === 12
+        Array.isArray(settings.question_indexes) && new Set(settings.question_indexes).size === 10
           ? [...settings.question_indexes].sort((first, second) => first - second)
           : defaultQuestionIndexes,
       );
@@ -112,20 +112,6 @@ export default function AdminPage() {
 
     setMessage(error ? error.message : "公開設定を保存しました。");
     setIsSaving(false);
-  };
-
-  const toggleQuestion = (index: number) => {
-    if (questionIndexes.includes(index)) {
-      setQuestionIndexes((current) => current.filter((currentIndex) => currentIndex !== index));
-      return;
-    }
-
-    if (questionIndexes.length >= 12) {
-      setMessage("質問は12問まで選択できます。選択済みの質問を1つ外してください。");
-      return;
-    }
-
-    setQuestionIndexes((current) => [...current, index].sort((first, second) => first - second));
   };
 
   const signOut = async () => {
@@ -295,32 +281,22 @@ export default function AdminPage() {
               </span>
             </label>
 
-            <div className="text-sm font-semibold text-slate-700">
-              今回出す質問（{questionIndexes.length} / 12問）
-              <p className="mt-2 font-normal text-slate-500">
-                質問を12問選んでください。保存後、次に回答を始める全員へ同じ順番で表示します。
+            <div className="rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700">
+              今回出す質問（各事業所10問）
+              <p className="mt-2 font-normal leading-6 text-slate-500">
+                回答者が選んだ事業所に合わせて、資料の該当する10問が自動で表示されます。管理者が質問を選び直す必要はありません。
               </p>
-              <div className="mt-3 max-h-[32rem] space-y-4 overflow-y-auto rounded-xl border border-slate-200 p-3">
-                {Array.from(new Set(allQuestions.map((question) => question.category))).map((category) => (
-                  <fieldset key={category} className="border-b border-slate-100 pb-3 last:border-0">
-                    <legend className="font-bold text-emerald-700">{category}</legend>
-                    <div className="mt-2 grid gap-2">
-                      {allQuestions.map((question, index) => question.category === category && (
-                        <label key={question.text} className="flex cursor-pointer items-start gap-2 rounded-lg p-2 hover:bg-emerald-50">
-                          <input type="checkbox" checked={questionIndexes.includes(index)} onChange={() => toggleQuestion(index)} className="mt-1 h-4 w-4" />
-                          <span className="font-normal leading-6">{question.text}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </fieldset>
+              <ul className="mt-3 grid gap-1 font-normal text-slate-600">
+                {Object.entries(serviceQuestionSets).map(([service, questions]) => (
+                  <li key={service}>・{service}：{questions.length}問</li>
                 ))}
-              </div>
+              </ul>
             </div>
 
             <button
               type="button"
               onClick={saveSettings}
-              disabled={isSaving || accessCode.trim().length < 6 || questionIndexes.length !== 12 || !sessionName.trim()}
+              disabled={isSaving || accessCode.trim().length < 6 || questionIndexes.length !== 10 || !sessionName.trim()}
               className="rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300"
             >
               {isSaving ? "保存中です..." : "公開設定を保存する"}
