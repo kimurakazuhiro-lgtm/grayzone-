@@ -3,33 +3,47 @@ alter table public.workshop_settings
 add column if not exists question_indexes integer[] not null default array[0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 alter table public.workshop_settings add column if not exists session_name text not null default '未設定';
+alter table public.workshop_settings add column if not exists service_question_indexes jsonb not null default '{}'::jsonb;
 
 drop function if exists public.admin_workshop_settings();
 create function public.admin_workshop_settings()
-returns table(access_code text, is_results_published boolean, question_count integer, question_indexes integer[], session_name text)
+returns table(access_code text, is_results_published boolean, question_count integer, question_indexes integer[], session_name text, service_question_indexes jsonb)
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_workshop_admin() then raise exception '管理者権限がありません。'; end if;
   return query
-  select settings.access_code, settings.is_results_published, settings.question_count, settings.question_indexes, settings.session_name
+  select settings.access_code, settings.is_results_published, settings.question_count, settings.question_indexes, settings.session_name, settings.service_question_indexes
   from public.workshop_settings as settings
   where settings.id = true;
 end; $$;
 
 drop function if exists public.update_workshop_settings(text, boolean, integer, integer[]);
 drop function if exists public.update_workshop_settings(text, boolean, integer, integer[], text);
-create function public.update_workshop_settings(p_access_code text, p_is_results_published boolean, p_question_count integer, p_question_indexes integer[], p_session_name text)
+drop function if exists public.update_workshop_settings(text, boolean, integer, integer[], text, jsonb);
+create function public.update_workshop_settings(p_access_code text, p_is_results_published boolean, p_question_count integer, p_question_indexes integer[], p_session_name text, p_service_question_indexes jsonb)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_workshop_admin() then raise exception '管理者権限がありません。'; end if;
   if char_length(trim(p_access_code)) < 6 then raise exception '閲覧コードは6文字以上にしてください。'; end if;
   if char_length(trim(p_session_name)) < 1 then raise exception '今回の研修名を入力してください。'; end if;
   if coalesce(array_length(p_question_indexes, 1), 0) <> 10 then raise exception '質問は10問に設定してください。'; end if;
-  update public.workshop_settings set access_code=trim(p_access_code), is_results_published=p_is_results_published, question_count=10, question_indexes=p_question_indexes, session_name=trim(p_session_name), updated_at=now() where id=true;
+  if not (
+    jsonb_typeof(p_service_question_indexes->'居宅') = 'array' and jsonb_array_length(p_service_question_indexes->'居宅') = 10 and
+    jsonb_typeof(p_service_question_indexes->'入所') = 'array' and jsonb_array_length(p_service_question_indexes->'入所') = 10 and
+    jsonb_typeof(p_service_question_indexes->'相談') = 'array' and jsonb_array_length(p_service_question_indexes->'相談') = 10 and
+    jsonb_typeof(p_service_question_indexes->'就労') = 'array' and jsonb_array_length(p_service_question_indexes->'就労') = 10 and
+    jsonb_typeof(p_service_question_indexes->'放デイ') = 'array' and jsonb_array_length(p_service_question_indexes->'放デイ') = 10 and
+    jsonb_typeof(p_service_question_indexes->'児発') = 'array' and jsonb_array_length(p_service_question_indexes->'児発') = 10 and
+    jsonb_typeof(p_service_question_indexes->'GH') = 'array' and jsonb_array_length(p_service_question_indexes->'GH') = 10
+  ) then raise exception '各事業所で質問を10問選択してください。'; end if;
+  update public.workshop_settings set access_code=trim(p_access_code), is_results_published=p_is_results_published, question_count=10, question_indexes=p_question_indexes, session_name=trim(p_session_name), service_question_indexes=p_service_question_indexes, updated_at=now() where id=true;
 end; $$;
 
 create or replace function public.public_workshop_session_name()
 returns text language sql security definer set search_path = public as $$ select session_name from public.workshop_settings where id=true; $$;
+
+create or replace function public.public_workshop_service_question_indexes()
+returns jsonb language sql security definer set search_path = public as $$ select service_question_indexes from public.workshop_settings where id=true; $$;
 
 -- 現在の研修名と一致する回答だけを集計します。
 drop function if exists public.get_workshop_results(text);
@@ -54,12 +68,14 @@ begin
 end; $$;
 
 revoke all on function public.admin_workshop_settings() from public;
-revoke all on function public.update_workshop_settings(text, boolean, integer, integer[], text) from public;
+revoke all on function public.update_workshop_settings(text, boolean, integer, integer[], text, jsonb) from public;
 revoke all on function public.public_workshop_session_name() from public;
+revoke all on function public.public_workshop_service_question_indexes() from public;
 revoke all on function public.get_workshop_results(text) from public;
 grant execute on function public.admin_workshop_settings() to authenticated;
-grant execute on function public.update_workshop_settings(text, boolean, integer, integer[], text) to authenticated;
+grant execute on function public.update_workshop_settings(text, boolean, integer, integer[], text, jsonb) to authenticated;
 grant execute on function public.public_workshop_session_name() to anon, authenticated;
+grant execute on function public.public_workshop_service_question_indexes() to anon, authenticated;
 grant execute on function public.get_workshop_results(text) to anon, authenticated;
 
 drop function if exists public.get_workshop_optional_texts(text);

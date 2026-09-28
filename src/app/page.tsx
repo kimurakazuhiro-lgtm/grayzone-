@@ -196,7 +196,7 @@ function getQuestionsForIndexes(indexes: number[]) {
 
 const questions = getQuestionsForIndexes(defaultQuestionIndexes);
 
-const serviceTypes = ["居宅", "入所", "相談", "就労", "放デイ", "児発", "GH"];
+export const serviceTypes = ["居宅", "入所", "相談", "就労", "放デイ", "児発", "GH"];
 
 type SurveyQuestion = { category: string; text: string };
 
@@ -288,6 +288,48 @@ export const serviceQuestionSets: Record<string, SurveyQuestion[]> = {
     "本人が希望する仕事は現在の能力では難しいと考え、採用される可能性が高そうな仕事を勧めた。",
     "本人が面接で失敗しないよう、本人らしい言葉よりも面接で評価されやすい受け答えを練習した。",
     "本人が希望する職場への応募について、難しいと思いながらもメリットとデメリットを説明して本人に判断してもらった。",
+  ].map((text) => ({ category: "就労移行支援", text }))),
+};
+
+// 入所と就労は資料内の候補が10問を超えるため、管理者がこの候補から10問を選びます。
+export const serviceQuestionBanks: Record<string, SurveyQuestion[]> = {
+  ...serviceQuestionSets,
+  "入所": serviceQuestionSets["入所"].concat([
+    "他の利用者さんとのトラブルが続いたため、本人だけ別の場所で過ごす時間を増やした。",
+    "本人は薬を自分で管理したいと希望しているが、飲み忘れが続いたため職員管理にした。",
+    "本人ができることでも、朝の忙しい時間帯は職員が手伝っている。",
+    "本人は違う事業所の日中活動を希望していたが、情報連携を強化するため、入所施設と同じ敷地内の生活介護事業所を利用してもらった。",
+    "本人の希望と施設のルールが合わなかったため、なぜそのルールがあるのか説明して一緒に方法を考えた。",
+  ].map((text) => ({ category: "施設入所支援", text })), [
+    "他の利用者さんとの相性が心配だったため、最初から居室を離して設定した。",
+    "本人が「家に帰りたい」と繰り返し言ったが、家族のレスパイトも必要なため予定どおり宿泊してもらった。",
+    "本人が不安そうだったため、その日の予定を写真や言葉で一つずつ説明した。",
+    "本人が普段家では禁止されていることを希望したため、家族のルールに合わせた。",
+    "本人が自宅へ電話したいと言ったため、希望する時間に電話できるよう支援した。",
+  ].map((text) => ({ category: "短期入所", text }))),
+  "就労": serviceQuestionSets["就労"].concat([
+    "過去に週5日勤務すると体調を崩したことがあるため、本人は週5日を希望しているが、まず週3日から始めることにした。",
+    "本人が作業に失敗しそうだったため、職員が途中で声をかけ、一緒に作業した。",
+    "ミスが続いている本人に対して、「このままだと一般就労は難しい」と伝えた。",
+    "本人がもっと難しい仕事をしたいと希望したため、失敗する可能性について説明したうえで挑戦してもらった。",
+    "納期を守るため、作業が早い利用者さんには他の人より多くの作業をお願いしている。",
+    "本人の得意・不得意を踏まえて、職員と本人で相談しながら担当作業を決めている。",
+  ].map((text) => ({ category: "就労継続支援A型", text })), [
+    "本人が「今日は作業したくない」と言ったため、理由を聞いて休憩してもらった。",
+    "工賃を上げるため、作業能力の高い利用者さんには多くの仕事を担当してもらっている。",
+    "本人が作業中にスマートフォンを何度も見るため、作業時間中は職員が預かるようにしている。",
+    "失敗したら商品にならない作業は、職員が代わってしている。",
+    "本人の作業スピードが遅くても、本人が希望している作業なので続けてもらっている。",
+    "本人さんの作った製品のできていないところを指摘し、やり直してもらった。",
+    "本人が何をしたいか分からないと言ったため、職員が本人の得意そうな作業をしてもらった。",
+  ].map((text) => ({ category: "就労継続支援B型", text })), [
+    "本人が「障害について企業には詳しく言いたくない」と希望したが、円滑に就労ができるように職員が間に入り、本人の障害特性について企業に説明した。",
+    "本人が失敗すると自信を失いそうなので、成功しやすい職場実習を選んだ。",
+    "本人が苦手な仕事についても、将来必要になると考えて繰り返し練習してもらっている。",
+    "遅刻が続く本人に「会社では通用しないよ」と伝えた。",
+    "本人が面接で不利にならないように、面接に着ていく服装を職員が決めた。",
+    "本人が疲れたと言ったため、その日の訓練を本人と相談して早めに終了した。",
+    "本人の希望だけでなく、「長く働き続けられるか」という視点も含めて就職先を一緒に考えた。",
   ].map((text) => ({ category: "就労移行支援", text }))),
 };
 
@@ -408,10 +450,25 @@ export default function Home() {
   };
 
   const startSurvey = async () => {
-    const { data: sessionName } = await supabase.rpc("public_workshop_session_name");
+    const [{ data: configuredQuestionIndexes }, { data: sessionName }] = await Promise.all([
+      supabase.rpc("public_workshop_service_question_indexes"),
+      supabase.rpc("public_workshop_session_name"),
+    ]);
 
-    // 選択した事業種に対応する資料の10問を表示します。
-    setSurveyQuestions(serviceQuestionSets[serviceType] ?? serviceQuestionSets["相談"]);
+    const bank = serviceQuestionBanks[serviceType] ?? serviceQuestionSets["相談"];
+    const selectedIndexes = typeof configuredQuestionIndexes === "object" && configuredQuestionIndexes !== null
+      ? (configuredQuestionIndexes as Record<string, unknown>)[serviceType]
+      : null;
+    const validIndexes = Array.isArray(selectedIndexes)
+      ? selectedIndexes.map(Number).filter((index) => Number.isInteger(index) && index >= 0 && index < bank.length)
+      : [];
+
+    // 管理者が事業所ごとに選んだ10問を表示します。未設定時は初期の10問です。
+    setSurveyQuestions(
+      new Set(validIndexes).size === 10
+        ? bank.filter((_, index) => validIndexes.includes(index))
+        : serviceQuestionSets[serviceType] ?? serviceQuestionSets["相談"],
+    );
     setWorkshopSessionName(typeof sessionName === "string" && sessionName.trim() ? sessionName.trim() : "未設定");
     setEditToken(crypto.randomUUID());
     setStarted(true);

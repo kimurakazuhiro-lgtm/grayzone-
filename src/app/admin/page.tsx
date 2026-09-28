@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { serviceQuestionSets } from "../page";
+import { serviceQuestionBanks, serviceTypes } from "../page";
 import { supabase } from "@/lib/supabase";
 
 type WorkshopSettings = {
@@ -11,10 +11,14 @@ type WorkshopSettings = {
   is_results_published: boolean;
   question_count: number;
   question_indexes: number[];
+  service_question_indexes: Record<string, number[]>;
   session_name: string;
 };
 
 const defaultQuestionIndexes = Array.from({ length: 10 }, (_, index) => index);
+const defaultServiceQuestionIndexes = Object.fromEntries(
+  serviceTypes.map((service) => [service, Array.from({ length: 10 }, (_, index) => index)]),
+) as Record<string, number[]>;
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -28,6 +32,8 @@ export default function AdminPage() {
   const [isPublished, setIsPublished] = useState(false);
   const [questionCount, setQuestionCount] = useState(10);
   const [questionIndexes, setQuestionIndexes] = useState<number[]>(defaultQuestionIndexes);
+  const [serviceQuestionIndexes, setServiceQuestionIndexes] = useState<Record<string, number[]>>(defaultServiceQuestionIndexes);
+  const [selectedService, setSelectedService] = useState(serviceTypes[0]);
   const [sessionName, setSessionName] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +56,16 @@ export default function AdminPage() {
         Array.isArray(settings.question_indexes) && new Set(settings.question_indexes).size === 10
           ? [...settings.question_indexes].sort((first, second) => first - second)
           : defaultQuestionIndexes,
+      );
+      const savedServiceIndexes = settings.service_question_indexes;
+      setServiceQuestionIndexes(
+        Object.fromEntries(serviceTypes.map((service) => {
+          const indexes = savedServiceIndexes?.[service];
+          const isValid = Array.isArray(indexes)
+            && new Set(indexes).size === 10
+            && indexes.every((index) => Number.isInteger(index) && index >= 0 && index < serviceQuestionBanks[service].length);
+          return [service, isValid ? [...indexes].sort((first, second) => first - second) : defaultServiceQuestionIndexes[service]];
+        })) as Record<string, number[]>,
       );
       setSessionName(settings.session_name ?? "");
     }
@@ -108,6 +124,7 @@ export default function AdminPage() {
       p_question_count: questionCount,
       p_question_indexes: questionIndexes,
       p_session_name: sessionName,
+      p_service_question_indexes: serviceQuestionIndexes,
     });
 
     setMessage(error ? error.message : "公開設定を保存しました。");
@@ -281,22 +298,45 @@ export default function AdminPage() {
               </span>
             </label>
 
-            <div className="rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700">
-              今回出す質問（各事業所10問）
+            <div className="text-sm font-semibold text-slate-700">
+              今回出す質問（事業所ごとに10問）
               <p className="mt-2 font-normal leading-6 text-slate-500">
-                回答者が選んだ事業所に合わせて、資料の該当する10問が自動で表示されます。管理者が質問を選び直す必要はありません。
+                事業所を選び、候補から10問を選んでください。保存後、回答者には選んだ事業所の10問だけが表示されます。
               </p>
-              <ul className="mt-3 grid gap-1 font-normal text-slate-600">
-                {Object.entries(serviceQuestionSets).map(([service, questions]) => (
-                  <li key={service}>・{service}：{questions.length}問</li>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {serviceTypes.map((service) => (
+                  <button key={service} type="button" onClick={() => setSelectedService(service)} className={`rounded-lg px-3 py-2 font-bold ${selectedService === service ? "bg-emerald-700 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>
+                    {service}（{serviceQuestionIndexes[service].length}/10）
+                  </button>
                 ))}
-              </ul>
+              </div>
+              <div className="mt-3 max-h-[32rem] space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
+                {serviceQuestionBanks[selectedService].map((question, index) => (
+                  <label key={question.text} className="flex cursor-pointer items-start gap-2 rounded-lg p-2 hover:bg-emerald-50">
+                    <input
+                      type="checkbox"
+                      checked={serviceQuestionIndexes[selectedService].includes(index)}
+                      onChange={() => setServiceQuestionIndexes((current) => {
+                        const currentIndexes = current[selectedService];
+                        if (currentIndexes.includes(index)) return { ...current, [selectedService]: currentIndexes.filter((item) => item !== index) };
+                        if (currentIndexes.length >= 10) {
+                          setMessage("質問は各事業所10問まで選択できます。選択済みの質問を1つ外してください。");
+                          return current;
+                        }
+                        return { ...current, [selectedService]: [...currentIndexes, index].sort((first, second) => first - second) };
+                      })}
+                      className="mt-1 h-4 w-4"
+                    />
+                    <span className="font-normal leading-6"><span className="mr-2 text-xs text-emerald-700">{question.category}</span>{question.text}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <button
               type="button"
               onClick={saveSettings}
-              disabled={isSaving || accessCode.trim().length < 6 || questionIndexes.length !== 10 || !sessionName.trim()}
+              disabled={isSaving || accessCode.trim().length < 6 || !serviceTypes.every((service) => serviceQuestionIndexes[service].length === 10) || !sessionName.trim()}
               className="rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300"
             >
               {isSaving ? "保存中です..." : "公開設定を保存する"}
