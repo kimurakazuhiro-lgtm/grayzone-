@@ -1313,16 +1313,16 @@ export default function Home() {
 
           {!isLoadingResults && !resultsError && resultRows.length > 0 && (
             <section className="mt-8 rounded-2xl border-2 border-slate-800 bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-emerald-700">5Keys 共有ボード</p>
-              <h2 className="mt-2 text-2xl font-bold">任意入力を、5Keysごとに貼り付ける</h2>
+              <p className="text-sm font-semibold text-emerald-700">安全・尊厳・ルール・主体・ワクワク 共有ボード</p>
+              <h2 className="mt-2 text-2xl font-bold">任意入力を、5つの観点ごとに貼り付ける</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                回答者が選んだ5Keysは表示しません。話し合いの中で、質問と任意入力を読み、カードを5Keysの列へ手動で整理します。
+                回答者が選んだ観点は表示しません。話し合いの中で、質問と任意入力を読み、カードを安全・尊厳・ルール・主体・ワクワクの列へ手動で整理します。
               </p>
 
               <section className="mt-5 rounded-xl border border-dashed border-slate-400 bg-white p-4">
                 <h3 className="font-bold text-slate-800">未整理のカード</h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  カードをクリックして選んだ後、下の5Keys列にある「ここへ移動」を押してください。
+                  カードをクリックして選んだ後、下の各観点の列にある「ここへ移動」を押してください。
                 </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {boardCards
@@ -1450,7 +1450,7 @@ export default function Home() {
                     </span>
                   </div>
                   <div className="mt-5 border-t border-slate-100 pt-4">
-                    <p className="text-sm font-semibold text-slate-700">5Keys傾向</p>
+                    <p className="text-sm font-semibold text-slate-700">安全・尊厳・ルール・主体・ワクワクの傾向</p>
                     {enteredCount === 0 ? (
                       <p className="mt-2 text-sm text-slate-600">「入る」の回答がまだありません。</p>
                     ) : (
