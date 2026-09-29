@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { serviceQuestionBanks, serviceTypes } from "../page";
+import { serviceQuestionBanks, serviceTypeLabels, serviceTypes } from "../page";
 import { supabase } from "@/lib/supabase";
 
 type WorkshopSettings = {
@@ -312,7 +312,7 @@ export default function AdminPage() {
               <div className="mt-3 flex flex-wrap gap-2">
                 {serviceTypes.map((service) => (
                   <button key={service} type="button" onClick={() => setSelectedService(service)} className={`rounded-lg px-3 py-2 font-bold ${selectedService === service ? "bg-emerald-700 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>
-                    {service}（{serviceQuestionIndexes[service].length}/10）
+                    {serviceTypeLabels[service]}（{serviceQuestionIndexes[service].length}/10）
                   </button>
                 ))}
               </div>

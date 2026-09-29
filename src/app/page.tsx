@@ -197,6 +197,16 @@ function getQuestionsForIndexes(indexes: number[]) {
 const questions = getQuestionsForIndexes(defaultQuestionIndexes);
 
 export const serviceTypes = ["居宅", "入所", "相談", "就労", "放デイ", "児発", "GH"];
+// 保存済みの回答との対応を保つため、内部の値は従来どおりにし、画面の表示名だけを整えます。
+export const serviceTypeLabels: Record<string, string> = {
+  居宅: "居宅",
+  入所: "入所",
+  相談: "相談",
+  就労: "就労",
+  放デイ: "放デイ",
+  児発: "児発",
+  GH: "GH等",
+};
 
 type SurveyQuestion = { category: string; text: string };
 
@@ -906,7 +916,7 @@ export default function Home() {
                       : "border-slate-200 bg-white text-slate-700"
                   }`}
                 >
-                  {item}
+                  {serviceTypeLabels[item]}
                 </button>
               ))}
             </div>
@@ -1283,7 +1293,7 @@ export default function Home() {
                 <option value="">すべての業種</option>
                 {serviceTypes.map((item) => (
                   <option key={item} value={item}>
-                    {item}
+                    {serviceTypeLabels[item]}
                   </option>
                 ))}
               </select>
@@ -1709,7 +1719,7 @@ export default function Home() {
 
           <dl className="mt-7 rounded-xl bg-emerald-50 p-5">
             <dt className="text-sm font-semibold text-slate-600">選択した事業種</dt>
-            <dd className="mt-1 text-lg font-bold">{serviceType}</dd>
+            <dd className="mt-1 text-lg font-bold">{serviceTypeLabels[serviceType] ?? serviceType}</dd>
           </dl>
 
           <div className="mt-7 space-y-5">
