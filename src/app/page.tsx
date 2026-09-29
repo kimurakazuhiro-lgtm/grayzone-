@@ -491,6 +491,7 @@ export default function Home() {
   const [grantedAccessCode, setGrantedAccessCode] = useState("");
   const [resultSessionNames, setResultSessionNames] = useState<string[]>([]);
   const [selectedResultSessionName, setSelectedResultSessionName] = useState("");
+  const [selectedResultServiceType, setSelectedResultServiceType] = useState("");
   const [boardCardLocations, setBoardCardLocations] = useState<Record<string, string>>({});
   const [selectedBoardCardId, setSelectedBoardCardId] = useState<string | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<ResultRow | null>(null);
@@ -643,7 +644,10 @@ export default function Home() {
     setEditToken("");
   };
 
-  const loadResultsWithCode = async (requestedSessionName?: string) => {
+  const loadResultsWithCode = async (
+    requestedSessionName?: string,
+    requestedServiceType = selectedResultServiceType,
+  ) => {
     const accessCode = resultsAccessCode.trim();
 
     if (!accessCode) {
@@ -665,6 +669,7 @@ export default function Home() {
       setGrantedAccessCode("");
       setResultSessionNames([]);
       setSelectedResultSessionName("");
+      setSelectedResultServiceType("");
     } else {
       const sessionNames = ((sessionData ?? []) as { session_name: string | null }[])
         .map((session) => String(session.session_name ?? "").trim())
@@ -678,6 +683,7 @@ export default function Home() {
         setGrantedAccessCode("");
         setResultSessionNames([]);
         setSelectedResultSessionName("");
+        setSelectedResultServiceType("");
         setIsLoadingResults(false);
         return;
       }
@@ -685,6 +691,7 @@ export default function Home() {
       const { data, error } = await supabase.rpc("get_workshop_results_for_session", {
         p_access_code: accessCode,
         p_session_name: targetSessionName,
+        p_service_type: requestedServiceType,
       });
 
       if (error) {
@@ -699,6 +706,7 @@ export default function Home() {
       setGrantedAccessCode(accessCode);
       setResultSessionNames(sessionNames);
       setSelectedResultSessionName(targetSessionName);
+      setSelectedResultServiceType(requestedServiceType);
       setResultRows((data ?? []) as ResultRow[]);
       setBoardCardLocations({});
       setSelectedBoardCardId(null);
@@ -706,6 +714,7 @@ export default function Home() {
       const { data: optionalTextData } = await supabase.rpc("get_workshop_optional_texts_for_session", {
         p_access_code: accessCode,
         p_session_name: targetSessionName,
+        p_service_type: requestedServiceType,
       });
       setOptionalTexts((optionalTextData ?? []) as OptionalText[]);
     }
@@ -1241,7 +1250,7 @@ export default function Home() {
             質問ごとの回答傾向と、回答者が任意で入力した内容を表示しています。
           </p>
 
-          <section className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <section className="mt-6 grid gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
               表示する研修結果
               <select
@@ -1256,10 +1265,32 @@ export default function Home() {
                   </option>
                 ))}
               </select>
+              <span className="mt-2 block text-sm leading-6 font-normal text-slate-600">
+                過去の研修名を選ぶと、その回の結果だけを表示します。
+              </span>
             </label>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              過去の研修名を選ぶと、その回の結果だけを表示します。
-            </p>
+
+            <label className="block text-sm font-bold text-slate-700">
+              表示する業種
+              <select
+                value={selectedResultServiceType}
+                onChange={(event) =>
+                  void loadResultsWithCode(undefined, event.target.value)
+                }
+                disabled={isLoadingResults}
+                className="mt-2 w-full rounded-lg border border-emerald-200 bg-white p-3 font-normal text-slate-800 disabled:bg-slate-100"
+              >
+                <option value="">すべての業種</option>
+                {serviceTypes.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-2 block text-sm leading-6 font-normal text-slate-600">
+                選んだ業種の回答だけを集計・表示します。
+              </span>
+            </label>
           </section>
 
           {isLoadingResults && <p className="mt-8 text-slate-600">読み込み中です。</p>}

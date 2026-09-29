@@ -124,7 +124,9 @@ begin
   order by min(sessions.display_order), sessions.session_name;
 end; $$;
 
-create or replace function public.get_workshop_results_for_session(p_access_code text, p_session_name text)
+drop function if exists public.get_workshop_results_for_session(text, text);
+drop function if exists public.get_workshop_results_for_session(text, text, text);
+create function public.get_workshop_results_for_session(p_access_code text, p_session_name text, p_service_type text)
 returns table(question_number integer, category text, question_text text, entered_count bigint, not_entered_count bigint, response_count bigint, five_keys jsonb)
 language plpgsql security definer set search_path=public as $$
 begin
@@ -141,6 +143,7 @@ begin
       r.answers->'answers'->>(q.ordinality-1)::text a, r.answers->'responseKeys'->(q.ordinality-1)::text k
     from public.responses r cross join lateral jsonb_array_elements(r.answers->'questions') with ordinality q(item,ordinality)
     where r.answers->>'workshopSessionName'=trim(p_session_name)
+      and (trim(coalesce(p_service_type,''))='' or r.answers->>'serviceType'=trim(p_service_type))
   ), summary as (
     select min(n)::integer n,c,t,count(*) filter(where a='入る')::bigint e,count(*) filter(where a='入らない')::bigint ne,count(*)::bigint rc
     from items where a in ('入る','入らない') group by c,t
@@ -156,7 +159,9 @@ begin
   from summary s left join keys on keys.c=s.c and keys.t=s.t order by s.c,s.t;
 end; $$;
 
-create or replace function public.get_workshop_optional_texts_for_session(p_access_code text, p_session_name text)
+drop function if exists public.get_workshop_optional_texts_for_session(text, text);
+drop function if exists public.get_workshop_optional_texts_for_session(text, text, text);
+create function public.get_workshop_optional_texts_for_session(p_access_code text, p_session_name text, p_service_type text)
 returns table(category text, question_text text, input_type text, content text)
 language plpgsql security definer set search_path=public as $$
 begin
@@ -171,16 +176,20 @@ begin
   select q.item->>'category',q.item->>'text','関連するエピソード（任意）'::text,e.value
   from public.responses r cross join lateral jsonb_each_text(coalesce(r.answers->'episodes','{}'::jsonb)) e(question_index,value)
   join lateral jsonb_array_elements(r.answers->'questions') with ordinality q(item,ordinality) on q.ordinality-1=e.question_index::integer
-  where r.answers->>'workshopSessionName'=trim(p_session_name) and btrim(e.value)<>''
+  where r.answers->>'workshopSessionName'=trim(p_session_name)
+    and (trim(coalesce(p_service_type,''))='' or r.answers->>'serviceType'=trim(p_service_type))
+    and btrim(e.value)<>''
   union all
   select null::text,null::text,'最後に入力した気になった対応（任意）'::text,r.answers->>'fieldSuggestion'
   from public.responses r
-  where r.answers->>'workshopSessionName'=trim(p_session_name) and btrim(coalesce(r.answers->>'fieldSuggestion',''))<>'';
+  where r.answers->>'workshopSessionName'=trim(p_session_name)
+    and (trim(coalesce(p_service_type,''))='' or r.answers->>'serviceType'=trim(p_service_type))
+    and btrim(coalesce(r.answers->>'fieldSuggestion',''))<>'';
 end; $$;
 
 revoke all on function public.get_workshop_result_sessions(text) from public;
-revoke all on function public.get_workshop_results_for_session(text, text) from public;
-revoke all on function public.get_workshop_optional_texts_for_session(text, text) from public;
+revoke all on function public.get_workshop_results_for_session(text, text, text) from public;
+revoke all on function public.get_workshop_optional_texts_for_session(text, text, text) from public;
 grant execute on function public.get_workshop_result_sessions(text) to anon, authenticated;
-grant execute on function public.get_workshop_results_for_session(text, text) to anon, authenticated;
-grant execute on function public.get_workshop_optional_texts_for_session(text, text) to anon, authenticated;
+grant execute on function public.get_workshop_results_for_session(text, text, text) to anon, authenticated;
+grant execute on function public.get_workshop_optional_texts_for_session(text, text, text) to anon, authenticated;
